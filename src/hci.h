@@ -67,6 +67,10 @@
 #include "btstack_sco_transport.h"
 #endif
 
+#ifdef LITEEMF_ENABLED
+#include "hal_typedef.h"
+#endif
+
 #include <stdint.h>
 #include <stdlib.h>
 #include <stdarg.h>

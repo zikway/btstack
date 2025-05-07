@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 BlueKitchen GmbH
+ * Copyright (C) 2017 BlueKitchen GmbH
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -36,66 +36,60 @@
  */
 
 /*
- *  hci_event.h
+ * btstack_run_loop_freertos.h
+ *
+ * Functions relevant for BTstack WICED port 
  */
 
-#ifndef HCI_EVENT_H
-#define HCI_EVENT_H
-#ifdef LITEEMF_ENABLED
-#include "hal_typedef.h"
-#endif
+#ifndef BTSTACK_RUN_LOOP_FREERTOS_H
+#define BTSTACK_RUN_LOOP_FREERTOS_H
 
-#include "bluetooth.h"
-
-#include <stdint.h>
-#include <stdarg.h>
+#include "btstack_config.h"
+#include "btstack_run_loop.h"
 
 #if defined __cplusplus
 extern "C" {
 #endif
 
-/** 
- * compact HCI Event packet description
- * no subevent_code field -> subevnt_code == 0
+/**
+ * @brief Get btstack_run_loop_freertos instance for use with btstack_run_loop_init
  */
- typedef struct {
-    uint8_t     event_code;
-    uint8_t     subevent_code;
-    const char *format;
-} hci_event_t;
+const btstack_run_loop_t * btstack_run_loop_freertos_get_instance(void);
 
 /**
- * construct HCI Event based on template
- *
- * Format:
- *   1,2,3,4: one to four byte value
- *   H: HCI connection handle
- *   B: Bluetooth Baseband Address (BD_ADDR)
- *   D: 8 byte data block
- *   P: 16 byte data block.
- *   Q: 32 byte data block, e.g. for X and Y coordinates of P-256 public key
- *   J: 1-byte length of following variable-length data blob 'V', length is included in packet
- *   K: 1-byte length of following variable-length data blob 'V', length is not included in packet
- *   V: variable-length data blob of len provided in 'J' field
+ * @brief Execute code on BTstack run loop. Can be used to control BTstack from a different thread
+
+ * @deprecated Please use btstack_run_loop_execute_on_main_thread() instead
  */
-uint16_t hci_event_create_from_template_and_arglist(uint8_t *hci_buffer, uint16_t buffer_size, const hci_event_t *event, va_list argptr);
+void btstack_run_loop_freertos_execute_code_on_main_thread(void (*fn)(void *arg), void * arg);
 
+/**
+ * @brief Triggers processing of data sources from thread context. 
+ * Has to be called after enabling a poll data source to wake-pup run loop.
+ *
+ * @deprecated Please use btstack_run_loop_execute_on_main_thread() instead
+ */
+void btstack_run_loop_freertos_trigger(void);    
 
-uint16_t hci_event_create_from_template_and_arguments(uint8_t *hci_buffer, uint16_t buffer_size, const hci_event_t *event, ...);
+/**
+ * @brief Triggers processing of data sources from an ISR.
+ * Has to be called after enabling a poll data source to wake-pup run loop.
+ *
+ * @deprecated Please call btstack_run_loop_poll_data_sources_from_irq() instead
+ */
+void btstack_run_loop_freertos_trigger_from_isr(void);
 
-/* LE Events */
-extern const hci_event_t hci_event_hardware_error;
-extern const hci_event_t hci_event_command_complete;
-extern const hci_event_t hci_event_disconnection_complete;
-extern const hci_event_t hci_event_number_of_completed_packets_1;
-extern const hci_event_t hci_event_transport_packet_sent;
+/**
+ * @brief Triggers exit of run loop from BTstack main thread, causes call to btstack_run_loop_execute to return
+ *
+ * @deprecated Please call btstack_run_loop_trigger_exit() instead
+ */
+void btstack_run_loop_freertos_trigger_exit(void);
 
-/* LE Subevents */
-extern const hci_event_t hci_subevent_le_connection_complete;
+/* API_END */
 
-    
 #if defined __cplusplus
 }
 #endif
 
-#endif // HCI_EVENT_H
+#endif // btstack_run_loop_WICED_H
