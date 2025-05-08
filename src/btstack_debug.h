@@ -30,7 +30,7 @@
  * THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * Please inquire about commercial licensing options at 
+ * Please inquire about commercial licensing options at
  * contact@bluekitchen-gmbh.com
  *
  */
@@ -38,7 +38,7 @@
 /**
  * @title Debug Messages
  *
- * Allow to funnel debug and error messages. 
+ * Allow to funnel debug and error messages.
  *
  */
 
@@ -91,7 +91,7 @@ noreturn void btstack_assert_failed(const char * file, uint16_t line_nr);
 #define btstack_assert(condition)         {(void)(condition);}
 #endif /* btstack_assert */
 #endif /* HAVE_ASSERT */
- 
+
 // mark code that should not be reached. Similar to assert, but mapped to NOP for coverage
 #ifdef UNIT_TEST
 #define btstack_unreachable()
@@ -102,9 +102,9 @@ noreturn void btstack_assert_failed(const char * file, uint16_t line_nr);
 // allow to provide port specific printf
 #ifndef BTSTACK_PRINTF
 #ifdef __AVR__
-#define BTSTACK_PRINTF(format, ...)          printf_P(PSTR(format), ## __VA_ARGS__)
+#define BTSTACK_PRINTF(format, ...)          logd(format, ## __VA_ARGS__)////printf_P(PSTR(format), ## __VA_ARGS__)
 #else
-#define BTSTACK_PRINTF(...)          printf( __VA_ARGS__)
+#define BTSTACK_PRINTF(...)          logd(__VA_ARGS__)////printf( __VA_ARGS__)
 #endif
 #endif
 
@@ -123,19 +123,19 @@ noreturn void btstack_assert_failed(const char * file, uint16_t line_nr);
 #define HCI_DUMP_LOG HCI_DUMP_LOG_PRINTF
 
 #ifdef ENABLE_LOG_DEBUG
-#define log_debug(format, ...)  HCI_DUMP_LOG(HCI_DUMP_LOG_LEVEL_DEBUG, format,  ## __VA_ARGS__)
+#define log_debug(format, ...)  logd(format, ## __VA_ARGS__)//HCI_DUMP_LOG(HCI_DUMP_LOG_LEVEL_DEBUG, format,  ## __VA_ARGS__)
 #else
 #define log_debug(...) (void)(0)
 #endif
 
 #ifdef ENABLE_LOG_INFO
-#define log_info(format, ...)  HCI_DUMP_LOG(HCI_DUMP_LOG_LEVEL_INFO, format,  ## __VA_ARGS__)
+#define log_info(format, ...)  logd(format, ## __VA_ARGS__)////HCI_DUMP_LOG(HCI_DUMP_LOG_LEVEL_INFO, format,  ## __VA_ARGS__)
 #else
 #define log_info(...) (void)(0)
 #endif
 
 #ifdef ENABLE_LOG_ERROR
-#define log_error(format, ...)  HCI_DUMP_LOG(HCI_DUMP_LOG_LEVEL_ERROR, format,  ## __VA_ARGS__)
+#define log_error(format, ...)  logd(format, ## __VA_ARGS__)////HCI_DUMP_LOG(HCI_DUMP_LOG_LEVEL_ERROR, format,  ## __VA_ARGS__)
 #else
 #define log_error(...) (void)(0)
 #endif
@@ -149,19 +149,19 @@ noreturn void btstack_assert_failed(const char * file, uint16_t line_nr);
 #define HCI_DUMP_LOG( ... ) GET_LOGGER_TYPE_FOR_ARG_COUNT(__VA_ARGS__, HCI_DUMP_LOG_PRINTF, HCI_DUMP_LOG_PRINTF, HCI_DUMP_LOG_PRINTF, HCI_DUMP_LOG_PRINTF, HCI_DUMP_LOG_PRINTF, HCI_DUMP_LOG_PRINTF, HCI_DUMP_LOG_PRINTF, HCI_DUMP_LOG_PRINTF, HCI_DUMP_LOG_PRINTF, HCI_DUMP_LOG_PRINTF, HCI_DUMP_LOG_PUTS, UNUSED)( __VA_ARGS__ )
 
 #ifdef ENABLE_LOG_DEBUG
-#define log_debug(...)  HCI_DUMP_LOG(HCI_DUMP_LOG_LEVEL_DEBUG, ## __VA_ARGS__)
+#define log_debug(...)  logd(__VA_ARGS__)//HCI_DUMP_LOG(HCI_DUMP_LOG_LEVEL_DEBUG, ## __VA_ARGS__)
 #else
 #define log_debug(...) (void)(0)
 #endif
 
 #ifdef ENABLE_LOG_INFO
-#define log_info(...)  HCI_DUMP_LOG(HCI_DUMP_LOG_LEVEL_INFO, ## __VA_ARGS__)
+#define log_info(...)  logd(__VA_ARGS__)////HCI_DUMP_LOG(HCI_DUMP_LOG_LEVEL_INFO, ## __VA_ARGS__)
 #else
 #define log_info(...) (void)(0)
 #endif
 
 #ifdef ENABLE_LOG_ERROR
-#define log_error(...)  HCI_DUMP_LOG(HCI_DUMP_LOG_LEVEL_ERROR, ## __VA_ARGS__)
+#define log_error(...)  logd(__VA_ARGS__)//HCI_DUMP_LOG(HCI_DUMP_LOG_LEVEL_ERROR, ## __VA_ARGS__)
 #else
 #define log_error(...) (void)(0)
 #endif
@@ -171,7 +171,7 @@ noreturn void btstack_assert_failed(const char * file, uint16_t line_nr);
 
 /* API_START */
 
-/** 
+/**
  * @brief Log Security Manager key via log_info
  * @param name
  * @param key to log
@@ -186,7 +186,7 @@ void log_info_key(const char * name, sm_key_t key);
 void log_info_hexdump(const void *data, int size);
 
 /**
- * @brief Hexdump via log_debug 
+ * @brief Hexdump via log_debug
  * @param data
  * @param size
  */

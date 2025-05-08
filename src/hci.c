@@ -30,7 +30,7 @@
  * THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * Please inquire about commercial licensing options at 
+ * Please inquire about commercial licensing options at
  * contact@bluekitchen-gmbh.com
  *
  */
@@ -415,7 +415,7 @@ hci_connection_t * hci_connection_for_handle(hci_con_handle_t con_handle){
         if ( item->con_handle == con_handle ) {
             return item;
         }
-    } 
+    }
     return NULL;
 }
 
@@ -431,8 +431,8 @@ hci_connection_t * hci_connection_for_bd_addr_and_type(const bd_addr_t  addr, bd
         hci_connection_t * connection = (hci_connection_t *) btstack_linked_list_iterator_next(&it);
         if (connection->address_type != addr_type)  continue;
         if (memcmp(addr, connection->address, 6) != 0) continue;
-        return connection;   
-    } 
+        return connection;
+    }
     return NULL;
 }
 
@@ -455,7 +455,7 @@ static int hci_number_sco_connections(void){
         hci_connection_t * connection = (hci_connection_t *) btstack_linked_list_iterator_next(&it);
         if (connection->address_type != BD_ADDR_TYPE_SCO) continue;
         connections++;
-    } 
+    }
     return connections;
 }
 #endif
@@ -467,7 +467,7 @@ static void hci_connection_timeout_handler(btstack_timer_source_t *timer){
         // connections might be timed out
         hci_emit_l2cap_check_timeout(connection);
     }
-#else 
+#else
     if (btstack_run_loop_get_time_ms() > (connection->timestamp + HCI_CONNECTION_TIMEOUT_MS)){
         // connections might be timed out
         hci_emit_l2cap_check_timeout(connection);
@@ -595,7 +595,7 @@ void gap_delete_all_link_keys(void){
     while (gap_link_key_iterator_get_next(&it, addr, link_key, &type)){
         gap_drop_link_key_for_bd_addr(addr);
     }
-    gap_link_key_iterator_done(&it);        
+    gap_link_key_iterator_done(&it);
 }
 
 int gap_link_key_iterator_init(btstack_link_key_iterator_t * it){
@@ -652,7 +652,7 @@ static int nr_hci_connections(void){
 }
 
 uint16_t hci_number_free_acl_slots_for_connection_type(bd_addr_type_t address_type){
-    
+
     int num_packets_sent_classic = 0;
     int num_packets_sent_le = 0;
 
@@ -792,7 +792,7 @@ bool hci_can_send_prepared_sco_packet_now(void){
     if (hci_have_usb_transport()){
         return hci_stack->sco_can_send_now;
     } else {
-        return hci_number_free_sco_slots() > 0;    
+        return hci_number_free_sco_slots() > 0;
     }
 }
 
@@ -912,7 +912,7 @@ static uint8_t hci_send_acl_packet_fragments(hci_connection_t *connection){
 
         // update header len
         little_endian_store_16(hci_stack->hci_packet_buffer, acl_header_pos + 2u, current_acl_data_packet_length);
-        
+
         // count packet
         connection->num_packets_sent++;
         log_debug("hci_send_acl_packet_fragments loop before send (more fragments %d)", (int) more_fragments);
@@ -1181,7 +1181,7 @@ static void acl_handler(uint8_t *packet, uint16_t size){
         return;
     }
 
-    // assert packet is complete    
+    // assert packet is complete
     if ((acl_length + 4u) != size){
         log_error("acl_handler called with ACL packet of wrong size %d, expected %u => dropping packet", size, acl_length + 4);
         return;
@@ -1199,9 +1199,9 @@ static void acl_handler(uint8_t *packet, uint16_t size){
 
     // handle different packet types
     switch (acl_flags & 0x03u) {
-            
+
         case 0x01: // continuation fragment
-            
+
             // sanity checks
             if (conn->acl_recombination_pos == 0u) {
                 log_error( "ACL Cont Fragment but no first fragment for handle 0x%02x", con_handle);
@@ -1219,7 +1219,7 @@ static void acl_handler(uint8_t *packet, uint16_t size){
                          &packet[4], acl_length);
             conn->acl_recombination_pos += acl_length;
 
-            // forward complete L2CAP packet if complete. 
+            // forward complete L2CAP packet if complete.
             if (conn->acl_recombination_pos >= (conn->acl_recombination_length + 4u + 4u)){ // pos already incl. ACL header
                 hci_emit_acl_packet(&conn->acl_recombination_buffer[HCI_INCOMING_PRE_BUFFER_SIZE], conn->acl_recombination_pos);
                 // reset recombination buffer
@@ -1227,9 +1227,9 @@ static void acl_handler(uint8_t *packet, uint16_t size){
                 conn->acl_recombination_pos = 0;
             }
             break;
-            
+
         case 0x02: { // first fragment
-            
+
             // sanity check
             if (conn->acl_recombination_pos) {
                 // we just received the first fragment, but still have data. Only warn if the packet wasn't a flushable packet
@@ -1262,13 +1262,13 @@ static void acl_handler(uint8_t *packet, uint16_t size){
                 little_endian_store_16(conn->acl_recombination_buffer, HCI_INCOMING_PRE_BUFFER_SIZE + 2u, l2cap_length +4u);
             }
             break;
-            
-        } 
+
+        }
         default:
             log_error( "acl_handler called with invalid packet boundary flags %u", acl_flags & 0x03);
             return;
     }
-    
+
     // execute main loop
     hci_run();
 }
@@ -1296,7 +1296,7 @@ static void hci_shutdown_connection(hci_connection_t *conn){
 
     btstack_linked_list_remove(&hci_stack->connections, (btstack_linked_item_t *) conn);
     btstack_memory_hci_connection_free( conn );
-    
+
     // now it's gone
     hci_emit_nr_connections_changed();
 
@@ -1460,7 +1460,7 @@ static bool gap_ssp_supported(void){
 #endif
 
 bool hci_classic_supported(void){
-#ifdef ENABLE_CLASSIC    
+#ifdef ENABLE_CLASSIC
     // No. 37, byte 4, bit 5, = No BR/EDR Support
     return (hci_stack->local_supported_features[4] & (1 << 5)) == 0;
 #else
@@ -1474,7 +1474,7 @@ bool hci_le_supported(void){
     return (hci_stack->local_supported_features[4u] & (1u << 6u)) != 0u;
 #else
     return false;
-#endif    
+#endif
 }
 
 static bool hci_command_supported(uint8_t command_index){
@@ -2020,7 +2020,7 @@ static void hci_initializing_run(void){
 
                 // Init script download on Broadcom chipsets causes:
                 if ( (hci_stack->chipset_result != BTSTACK_CHIPSET_NO_INIT_SCRIPT) &&
-                   (  (hci_stack->manufacturer == BLUETOOTH_COMPANY_ID_BROADCOM_CORPORATION) 
+                   (  (hci_stack->manufacturer == BLUETOOTH_COMPANY_ID_BROADCOM_CORPORATION)
                 ||    (hci_stack->manufacturer == BLUETOOTH_COMPANY_ID_EM_MICROELECTRONIC_MARIN_SA)) ){
 
                     // - baud rate to reset, restore UART baud rate if needed
@@ -2047,7 +2047,7 @@ static void hci_initializing_run(void){
         case HCI_INIT_READ_LOCAL_SUPPORTED_COMMANDS:
             hci_stack->substate = HCI_INIT_W4_READ_LOCAL_SUPPORTED_COMMANDS;
             hci_send_cmd(&hci_read_local_supported_commands);
-            break;       
+            break;
         case HCI_INIT_READ_BD_ADDR:
             hci_stack->substate = HCI_INIT_W4_READ_BD_ADDR;
             hci_send_cmd(&hci_read_bd_addr);
@@ -2065,7 +2065,7 @@ static void hci_initializing_run(void){
         case HCI_INIT_READ_LOCAL_SUPPORTED_FEATURES:
             hci_stack->substate = HCI_INIT_W4_READ_LOCAL_SUPPORTED_FEATURES;
             hci_send_cmd(&hci_read_local_supported_features);
-            break;                
+            break;
 
 #ifdef ENABLE_HCI_CONTROLLER_TO_HOST_FLOW_CONTROL
         case HCI_INIT_SET_CONTROLLER_TO_HOST_FLOW_CONTROL:
@@ -2074,9 +2074,9 @@ static void hci_initializing_run(void){
             break;
         case HCI_INIT_HOST_BUFFER_SIZE:
             hci_stack->substate = HCI_INIT_W4_HOST_BUFFER_SIZE;
-            hci_send_cmd(&hci_host_buffer_size, HCI_HOST_ACL_PACKET_LEN, HCI_HOST_SCO_PACKET_LEN, 
+            hci_send_cmd(&hci_host_buffer_size, HCI_HOST_ACL_PACKET_LEN, HCI_HOST_SCO_PACKET_LEN,
                                                 HCI_HOST_ACL_PACKET_NUM, HCI_HOST_SCO_PACKET_NUM);
-            break;            
+            break;
 #endif
 
         case HCI_INIT_SET_EVENT_MASK:
@@ -2084,7 +2084,7 @@ static void hci_initializing_run(void){
             if (hci_le_supported()){
                 hci_send_cmd(&hci_set_event_mask,0xFFFFFFFFU, 0x3FFFFFFFU);
             } else {
-                // Kensington Bluetooth 2.1 USB Dongle (CSR Chipset) returns an error for 0xffff... 
+                // Kensington Bluetooth 2.1 USB Dongle (CSR Chipset) returns an error for 0xffff...
                 hci_send_cmd(&hci_set_event_mask,0xFFFFFFFFU, 0x1FFFFFFFU);
             }
             break;
@@ -2334,7 +2334,7 @@ static void hci_initializing_run(void){
                 hci_send_cmd(&hci_le_read_white_list_size);
                 break;
             }
-            
+
 #endif
 
 #ifdef ENABLE_LE_PERIPHERAL
@@ -2400,6 +2400,7 @@ static void hci_initializing_run(void){
 }
 
 static bool hci_initializing_event_handler_command_completed(const uint8_t * packet){
+    //return true; //dgh todo 测试流程
     bool command_completed = false;
     if (hci_event_packet_get_type(packet) == HCI_EVENT_COMMAND_COMPLETE){
         uint16_t opcode = little_endian_read_16(packet,3);
@@ -2447,7 +2448,7 @@ static bool hci_initializing_event_handler_command_completed(const uint8_t * pac
 static void hci_initializing_event_handler(const uint8_t * packet, uint16_t size){
 
     UNUSED(size);   // ok: less than 6 bytes are read from our buffer
-    
+
     bool command_completed =  hci_initializing_event_handler_command_completed(packet);
 
 #ifndef HAVE_HOST_CONTROLLER_API
@@ -2564,7 +2565,7 @@ static void hci_initializing_event_handler(const uint8_t * packet, uint16_t size
 
         case HCI_INIT_W4_READ_LOCAL_SUPPORTED_COMMANDS:
             if (need_baud_change && (hci_stack->chipset_result != BTSTACK_CHIPSET_NO_INIT_SCRIPT) &&
-              ((hci_stack->manufacturer == BLUETOOTH_COMPANY_ID_BROADCOM_CORPORATION) || 
+              ((hci_stack->manufacturer == BLUETOOTH_COMPANY_ID_BROADCOM_CORPORATION) ||
                (hci_stack->manufacturer == BLUETOOTH_COMPANY_ID_EM_MICROELECTRONIC_MARIN_SA))) {
                 hci_stack->substate = HCI_INIT_SEND_BAUD_CHANGE_BCM;
                 return;
@@ -2587,7 +2588,7 @@ static void hci_initializing_event_handler(const uint8_t * packet, uint16_t size
                 return;
             }
             hci_stack->substate = HCI_INIT_READ_BD_ADDR;
-            return;            
+            return;
         case HCI_INIT_W4_SET_BD_ADDR:
             // for STLC2500D + ATWILC3000, bd addr change only gets active after sending reset command
             if ((hci_stack->manufacturer == BLUETOOTH_COMPANY_ID_ST_MICROELECTRONICS)
@@ -2636,7 +2637,7 @@ static void hci_handle_connection_failed(hci_connection_t * conn, uint8_t status
     // cache needed data
     int notify_dedicated_bonding_failed = conn->bonding_flags & BONDING_DEDICATED;
 #endif
-    
+
     // connection failed, remove entry
     btstack_linked_list_remove(&hci_stack->connections, (btstack_linked_item_t *) conn);
     btstack_memory_hci_connection_free( conn );
@@ -3674,13 +3675,13 @@ static void event_handler(uint8_t *packet, uint16_t size){
 #endif
 
     // log_info("HCI:EVENT:%02x", hci_event_packet_get_type(packet));
-    
+
     switch (hci_event_packet_get_type(packet)) {
-                        
+
         case HCI_EVENT_COMMAND_COMPLETE:
             handle_command_complete_event(packet, size);
             break;
-            
+
         case HCI_EVENT_COMMAND_STATUS:
             handle_command_status_event(packet, size);
             break;
@@ -3701,7 +3702,7 @@ static void event_handler(uint8_t *packet, uint16_t size){
                 offset += 2u;
                 uint16_t num_packets = little_endian_read_16(packet, offset);
                 offset += 2u;
-                
+
                 conn = hci_connection_for_handle(handle);
                 if (conn != NULL) {
 
@@ -3801,7 +3802,7 @@ static void event_handler(uint8_t *packet, uint16_t size){
                     bd_addr_copy(hci_stack->decline_addr, addr);
                     break;
                 }
-            } 
+            }
 
             // TODO: eval COD 8-10
             log_info("Connection_incoming: %s, type %u", bd_addr_to_str(addr), (unsigned int) link_type);
@@ -3833,7 +3834,7 @@ static void event_handler(uint8_t *packet, uint16_t size){
             }
             hci_run();
             break;
-            
+
         case HCI_EVENT_CONNECTION_COMPLETE:
             // Connection management
             reverse_bd_addr(&packet[5], addr);
@@ -3875,7 +3876,7 @@ static void event_handler(uint8_t *packet, uint16_t size){
                     }
 
                     log_info("New connection: handle %u, %s", conn->con_handle, bd_addr_to_str(conn->address));
-                    
+
                     hci_emit_nr_connections_changed();
                 } else {
                     // connection failed
@@ -3899,7 +3900,7 @@ static void event_handler(uint8_t *packet, uint16_t size){
             }
 
             conn->state = OPEN;
-            conn->con_handle = little_endian_read_16(packet, 3);            
+            conn->con_handle = little_endian_read_16(packet, 3);
 
             // update sco payload length for eSCO connections
             if (hci_event_synchronous_connection_complete_get_tx_packet_length(packet) > 0){
@@ -4001,7 +4002,7 @@ static void event_handler(uint8_t *packet, uint16_t size){
             conn->authentication_flags |= AUTH_FLAG_HANDLE_LINK_KEY_REQUEST;
 #endif
             break;
-            
+
         case HCI_EVENT_LINK_KEY_NOTIFICATION: {
             hci_event_link_key_request_get_bd_addr(packet, addr);
             conn = hci_connection_for_bd_addr_and_type(addr, BD_ADDR_TYPE_ACL);
@@ -4781,7 +4782,7 @@ static void sco_handler(uint8_t * packet, uint16_t size){
     conn->num_packets_completed++;
     hci_stack->host_completed_packets = 1;
     hci_run();
-#endif    
+#endif
 }
 #endif
 
@@ -4835,7 +4836,7 @@ static void packet_handler(uint8_t packet_type, uint8_t *packet, uint16_t size){
 }
 
 /**
- * @brief Add event packet handler. 
+ * @brief Add event packet handler.
  */
 void hci_add_event_handler(btstack_packet_callback_registration_t * callback_handler){
     btstack_linked_list_add_tail(&hci_stack->event_handlers, (btstack_linked_item_t*) callback_handler);
@@ -4858,7 +4859,7 @@ void hci_register_acl_packet_handler(btstack_packet_handler_t handler){
  * @brief Registers a packet handler for SCO data. Used for HSP and HFP profiles.
  */
 void hci_register_sco_packet_handler(btstack_packet_handler_t handler){
-    hci_stack->sco_packet_handler = handler;    
+    hci_stack->sco_packet_handler = handler;
 }
 #endif
 
@@ -4953,7 +4954,7 @@ void hci_set_link_key_db(btstack_link_key_db_t const * link_key_db){
 #endif
 
 void hci_init(const hci_transport_t *transport, const void *config){
-    
+
 #ifdef HAVE_MALLOC
     if (!hci_stack) {
         hci_stack = (hci_stack_t*) malloc(sizeof(hci_stack_t));
@@ -4966,23 +4967,23 @@ void hci_init(const hci_transport_t *transport, const void *config){
 
     // reference to use transport layer implementation
     hci_stack->hci_transport = transport;
-        
+
     // reference to used config
     hci_stack->config = config;
-    
+
     // setup pointer for outgoing packet buffer
     hci_stack->hci_packet_buffer = &hci_stack->hci_packet_buffer_data[HCI_OUTGOING_PRE_BUFFER_SIZE];
 
     // max acl payload size defined in config.h
     hci_stack->acl_data_packet_length = HCI_ACL_PAYLOAD_SIZE;
-    
+
     // register packet handlers with transport
     transport->register_packet_handler(&packet_handler);
 
     hci_stack->state = HCI_STATE_OFF;
 
     // class of device
-    hci_stack->class_of_device = 0x007a020c; // Smartphone 
+    hci_stack->class_of_device = 0x007a020c; // Smartphone
 
     // bondable by default
     hci_stack->bondable = 1;
@@ -5016,7 +5017,7 @@ void hci_init(const hci_transport_t *transport, const void *config){
     hci_stack->enabled_packet_types_acl = ACL_PACKET_TYPES_ALL;
 #endif
 
-    // Secure Simple Pairing default: enable, no I/O capabilities, general bonding, mitm not required, auto accept 
+    // Secure Simple Pairing default: enable, no I/O capabilities, general bonding, mitm not required, auto accept
     hci_stack->ssp_enable = 1;
     hci_stack->ssp_io_capability = SSP_IO_CAPABILITY_NO_INPUT_NO_OUTPUT;
     hci_stack->ssp_authentication_requirement = SSP_IO_AUTHREQ_MITM_PROTECTION_NOT_REQUIRED_GENERAL_BONDING;
@@ -5063,7 +5064,7 @@ void hci_init(const hci_transport_t *transport, const void *config){
 #endif
 
     // connection parameter range used to answer connection parameter update requests in l2cap
-    hci_stack->le_connection_parameter_range.le_conn_interval_min =          6; 
+    hci_stack->le_connection_parameter_range.le_conn_interval_min =          6;
     hci_stack->le_connection_parameter_range.le_conn_interval_max =       3200;
     hci_stack->le_connection_parameter_range.le_conn_latency_min =           0;
     hci_stack->le_connection_parameter_range.le_conn_latency_max =         500;
@@ -5149,7 +5150,7 @@ void hci_close(void){
     hci_discard_connections();
 
     hci_power_control(HCI_POWER_OFF);
-    
+
 #ifdef HAVE_MALLOC
     free(hci_stack);
 #endif
@@ -5255,7 +5256,7 @@ void hci_set_bd_addr(bd_addr_t addr){
 #endif
 
 // State-Module-Driver overview
-// state                    module  low-level 
+// state                    module  low-level
 // HCI_STATE_OFF             off      close
 // HCI_STATE_INITIALIZING,   on       open
 // HCI_STATE_WORKING,        on       open
@@ -5264,7 +5265,7 @@ void hci_set_bd_addr(bd_addr_t addr){
 // HCI_STATE_FALLING_ASLEEP  on       open
 
 static int hci_power_control_on(void){
-    
+
     // power on
     int err = 0;
     if (hci_stack->control && hci_stack->control->on){
@@ -5275,7 +5276,7 @@ static int hci_power_control_on(void){
         hci_emit_hci_open_failed();
         return err;
     }
-    
+
     // int chipset driver
     if (hci_stack->chipset && hci_stack->chipset->init){
         hci_stack->chipset->init(hci_stack->config);
@@ -5300,52 +5301,52 @@ static int hci_power_control_on(void){
 }
 
 static void hci_power_control_off(void){
-    
+
     log_info("hci_power_control_off");
 
     // close low-level device
     hci_stack->hci_transport->close();
 
     log_info("hci_power_control_off - hci_transport closed");
-    
+
     // power off
     if (hci_stack->control && hci_stack->control->off){
         (*hci_stack->control->off)();
     }
-    
+
     log_info("hci_power_control_off - control closed");
 
     hci_stack->state = HCI_STATE_OFF;
 }
 
 static void hci_power_control_sleep(void){
-    
+
     log_info("hci_power_control_sleep");
-    
+
 #if 0
     // don't close serial port during sleep
-    
+
     // close low-level device
     hci_stack->hci_transport->close(hci_stack->config);
 #endif
-    
+
     // sleep mode
     if (hci_stack->control && hci_stack->control->sleep){
         (*hci_stack->control->sleep)();
     }
-    
+
     hci_stack->state = HCI_STATE_SLEEPING;
 }
 
 static int hci_power_control_wake(void){
-    
+
     log_info("hci_power_control_wake");
 
     // wake on
     if (hci_stack->control && hci_stack->control->wake){
         (*hci_stack->control->wake)();
     }
-    
+
 #if 0
     // open low-level device
     int err = hci_stack->hci_transport->open(hci_stack->config);
@@ -5358,7 +5359,7 @@ static int hci_power_control_wake(void){
         return err;
     }
 #endif
-    
+
     return 0;
 }
 
@@ -5575,10 +5576,10 @@ int hci_power_control(HCI_POWER_MODE power_mode){
 
     // create internal event
 	hci_emit_state();
-    
+
 	// trigger next/first action
 	hci_run();
-	
+
     return 0;
 }
 
@@ -5807,7 +5808,7 @@ static void hci_update_scan_enable(void){
 
 void gap_discoverable_control(uint8_t enable){
     if (enable) enable = 1; // normalize argument
-    
+
     if (hci_stack->discoverable == enable){
         hci_emit_scan_mode_changed(hci_stack->discoverable, hci_stack->connectable);
         return;
@@ -5819,7 +5820,7 @@ void gap_discoverable_control(uint8_t enable){
 
 void gap_connectable_control(uint8_t enable){
     if (enable) enable = 1; // normalize argument
-    
+
     // don't emit event
     if (hci_stack->connectable == enable) return;
 
@@ -5859,7 +5860,7 @@ static void hci_host_num_completed_packets(void){
             num_handles++;
             connection->num_packets_completed = 0;
         }
-    }    
+    }
 
     packet[2] = size - 3;
     packet[3] = num_handles;
@@ -5869,7 +5870,7 @@ static void hci_host_num_completed_packets(void){
     hci_dump_packet(HCI_COMMAND_DATA_PACKET, 0, packet, size);
     hci_stack->hci_transport->send_packet(HCI_COMMAND_DATA_PACKET, packet, size);
 
-    // release packet buffer for synchronous transport implementations    
+    // release packet buffer for synchronous transport implementations
     if (hci_transport_synchronous()){
         hci_release_packet_buffer();
         hci_emit_transport_packet_sent();
@@ -5881,7 +5882,7 @@ static void hci_halting_timeout_handler(btstack_timer_source_t * ds){
     UNUSED(ds);
     hci_stack->substate = HCI_HALTING_CLOSE;
     hci_halting_run();
-}   
+}
 
 static bool hci_run_acl_fragments(void){
     if (hci_stack->acl_fragmentation_total_size > 0u) {
@@ -7667,7 +7668,7 @@ static void hci_run(void){
     // send host num completed packets next as they don't require num_cmd_packets > 0
     if (!hci_can_send_command_packet_transport()) return;
     if (hci_stack->host_completed_packets){
-        hci_host_num_completed_packets();        
+        hci_host_num_completed_packets();
         return;
     }
 #endif
@@ -7729,7 +7730,7 @@ static uint8_t hci_send_prepared_cmd_packet(void) {
 
 uint8_t hci_send_cmd_packet(uint8_t *packet, int size){
     // house-keeping
-    
+
 #ifdef ENABLE_CLASSIC
     bd_addr_t addr;
     hci_connection_t * conn;
@@ -7993,7 +7994,7 @@ bool gap_secure_connections_active(void){
 
 // va_list part of hci_send_cmd
 uint8_t hci_send_cmd_va_arg(const hci_cmd_t * cmd, va_list argptr){
-    if (!hci_can_send_command_packet_now()){ 
+    if (!hci_can_send_command_packet_now()){
         log_error("hci_send_cmd called but cannot send packet now");
         return ERROR_CODE_COMMAND_DISALLOWED;
     }
@@ -8006,13 +8007,13 @@ uint8_t hci_send_cmd_va_arg(const hci_cmd_t * cmd, va_list argptr){
 /**
  * pre: num_commands >= 0 - it's allowed to send a command to the controller
  */
-uint8_t hci_send_cmd(const hci_cmd_t * cmd, ...){
-    va_list argptr;
-    va_start(argptr, cmd);
-    uint8_t status = hci_send_cmd_va_arg(cmd, argptr);
-    va_end(argptr);
-    return status;
-}
+//uint8_t hci_send_cmd(const hci_cmd_t * cmd, ...){
+//    va_list argptr;
+//    va_start(argptr, cmd);
+//    uint8_t status = hci_send_cmd_va_arg(cmd, argptr);
+//    va_end(argptr);
+//    return status;
+//}
 
 // Forward HCI events and create non-HCI events
 
@@ -8020,7 +8021,7 @@ static void hci_emit_event(uint8_t * event, uint16_t size, int dump){
     // dump packet
     if (dump) {
         hci_dump_packet( HCI_EVENT_PACKET, 1, event, size);
-    } 
+    }
 
     // dispatch to all event handlers
     btstack_linked_list_iterator_t it;
@@ -8283,7 +8284,7 @@ static gap_security_level_t gap_security_level_for_connection(hci_connection_t *
         security_level = LEVEL_3;
     }
     return security_level;
-}    
+}
 
 static void hci_emit_scan_mode_changed(uint8_t discoverable, uint8_t connectable){
     uint8_t event[4];
@@ -8357,7 +8358,7 @@ void hci_remote_features_query(hci_con_handle_t con_handle){
 void gap_set_bondable_mode(int enable){
     hci_stack->bondable = enable ? 1 : 0;
 }
-/**  
+/**
  * @brief Get bondable mode.
  * @return 1 if bondable
  */
@@ -8440,7 +8441,7 @@ void gap_request_security_level(hci_con_handle_t con_handle, gap_security_level_
     }
 
     gap_security_level_t current_level = gap_security_level(con_handle);
-    log_info("gap_request_security_level requested level %u, planned level %u, current level %u", 
+    log_info("gap_request_security_level requested level %u, planned level %u, current level %u",
         requested_level, connection->requested_security_level, current_level);
 
     // authentication active if authentication request was sent or planned level > 0
@@ -8489,7 +8490,7 @@ int gap_dedicated_bonding(bd_addr_t device, int mitm_protection_required){
     gap_drop_link_key_for_bd_addr(device);
 
     // configure LEVEL_2/3, dedicated bonding
-    connection->state = SEND_CREATE_CONNECTION;    
+    connection->state = SEND_CREATE_CONNECTION;
     connection->requested_security_level = mitm_protection_required ? LEVEL_3 : LEVEL_2;
     log_info("gap_dedicated_bonding, mitm %d -> level %u", mitm_protection_required, connection->requested_security_level);
     connection->bonding_flags = BONDING_DEDICATED;
@@ -8773,7 +8774,7 @@ void gap_advertisements_set_data(uint8_t advertising_data_length, uint8_t * adve
     hci_run();
 }
 
-/** 
+/**
  * @brief Set Scan Response Data
  * @param advertising_data_length
  * @param advertising_data (max 31 octets)
@@ -9193,7 +9194,7 @@ static uint8_t hci_whitelist_add(bd_addr_type_t address_type, const bd_addr_t ad
                 // disallow as already on controller
                 return ERROR_CODE_COMMAND_DISALLOWED;
             }
-        } 
+        }
 
         // assume scheduled to add
 		return ERROR_CODE_COMMAND_DISALLOWED;
@@ -9367,7 +9368,7 @@ uint16_t gap_le_connection_interval(hci_con_handle_t con_handle){
 #endif
 #endif
 
-#ifdef ENABLE_CLASSIC 
+#ifdef ENABLE_CLASSIC
 /**
  * @brief Set Extended Inquiry Response data
  * @param eir_data size HCI_EXTENDED_INQUIRY_RESPONSE_DATA_LEN (240) bytes, is not copied make sure memory is accessible during stack startup
@@ -9640,7 +9641,7 @@ void hci_set_inquiry_mode(inquiry_mode_t inquiry_mode){
     hci_stack->inquiry_mode = inquiry_mode;
 }
 
-/** 
+/**
  * @brief Configure Voice Setting for use with SCO data in HSP/HFP
  */
 void hci_set_sco_voice_setting(uint16_t voice_setting){

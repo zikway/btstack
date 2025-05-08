@@ -121,7 +121,11 @@ static void btstack_run_loop_freertos_set_timer(btstack_timer_source_t *ts, uint
 
 static void btstack_run_loop_freertos_trigger_from_thread(void){
 #ifdef HAVE_FREERTOS_TASK_NOTIFICATIONS
-    xTaskNotify(btstack_run_loop_task, EVENT_GROUP_FLAG_RUN_LOOP, eSetBits);
+    //xTaskNotify(btstack_run_loop_task, EVENT_GROUP_FLAG_RUN_LOOP, eSetBits);
+    int err = os_taskq_post_msg("bt_task", 1, EVENT_GROUP_FLAG_RUN_LOOP);
+    if (err) {
+        logd("bt_stack loop error");
+    };
 #else
     xEventGroupSetBits(btstack_run_loop_event_group, EVENT_GROUP_FLAG_RUN_LOOP);
 #endif
@@ -156,7 +160,8 @@ static void btstack_run_loop_freertos_execute(void) {
     log_debug("RL: execute");
 
     run_loop_exit_requested = false;
-
+    int err;
+    int msg[1];
     while (true) {
 
         // process data sources
@@ -203,11 +208,15 @@ static void btstack_run_loop_freertos_execute(void) {
         log_debug("RL: wait with timeout %u", (int) timeout_ms);
         logd("btstack %s %d ", __FILE__, __LINE__);
 #ifdef HAVE_FREERTOS_TASK_NOTIFICATIONS
-        //xTaskNotifyWait(pdFALSE, 0xffffffff, NULL, pdMS_TO_TICKS(timeout_ms));   //dgh todo
+        //xTaskNotifyWait(pdFALSE, 0xffffffff, NULL, pdMS_TO_TICKS(timeout_ms));   //
+        err = os_task_pend("bt_task", msg, ARRAY_SIZE(msg));
+        if (err) {
+            logd("btstack loop error");
+        }
 #else
         xEventGroupWaitBits(btstack_run_loop_event_group, EVENT_GROUP_FLAG_RUN_LOOP, 1, 0, pdMS_TO_TICKS(timeout_ms));
 #endif
-        os_time_dly(500); //由于xTaskNotifyWait无法使用，测试bt loop，用于做任务切换，防止重启
+        //os_time_dly(500); //由于xTaskNotifyWait无法使用，测试bt loop，用于做任务切换，防止重启
     }
 }
 

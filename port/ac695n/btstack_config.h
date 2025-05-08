@@ -18,7 +18,9 @@
 
 // Port related features
 #define HAVE_EMBEDDED_TIME_MS
-
+#define ENABLE_LOG_DEBUG
+#define ENABLE_LOG_ERROR
+#define ENABLE_LOG_INFO
 // BTstack features that can be enabled
 #define ENABLE_CLASSIC
 #define NVM_NUM_LINK_KEYS 2

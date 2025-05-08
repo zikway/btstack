@@ -25,6 +25,10 @@
 #include "syscfg_id.h"
 extern int btstack_main(int argc, const char * argv[]);
 
+static btstack_packet_callback_registration_t hci_event_callback_registration;
+
+static void (*transport_packet_handler)(uint8_t packet_type, uint8_t *packet, uint16_t size);
+
 //蓝牙调度所需要的ms时间
 uint32_t hal_time_ms(void)
 {
@@ -34,12 +38,14 @@ uint32_t hal_time_ms(void)
 //用于接收controler 的上行数据
 int hci_packet_handler(u8 type, u8 *packet, u16 size)
 {
-   int err = 0;
-   int msg[2];
+    int err = 0;
+    int msg[2];
 
-   logd("HCI PH : 0x%x / %d", packet, size);
+    logd("HCI PH : 0x%x %x %x %x %x %x %x / %d", packet,packet[0],packet[1],packet[2],packet[3],packet[4],packet[5] ,size);
    /* log_info_hexdump(packet, size); */
-
+    if (transport_packet_handler != NULL) {
+        transport_packet_handler(type, packet, size);
+    }
 //   switch (type) {
 //   case HCI_EVENT_PACKET: {
 //       struct hci_event *p;
@@ -77,9 +83,6 @@ static void packet_handler (uint8_t packet_type, uint16_t channel, uint8_t *pack
     //         break;
     // }
 }
-static btstack_packet_callback_registration_t hci_event_callback_registration;
-
-static void (*transport_packet_handler)(uint8_t packet_type, uint8_t *packet, uint16_t size);
 
 /**
  * register packet handler for HCI packets: ACL and Events
@@ -209,14 +212,14 @@ void bt_task_handle(void *arg)
     logd("btstack %d",__LINE__);
     hci_add_event_handler(&hci_event_callback_registration);
 
-    // btstack_main(0, NULL);
+    btstack_main(0, NULL);
 
     log_info("btstack executing run loop...");
     logd("btstack %d",__LINE__);
-    btstack_run_loop_execute();
-    while (1)
-    {
-        os_time_dly(500);
-        logd("btstack %d",__LINE__);
-    }
+    btstack_run_loop_execute();  //包含while（1）
+//    while (1)
+//    {
+//        os_time_dly(500);
+//        logd("btstack %d",__LINE__);
+//    }
 }
