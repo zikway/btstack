@@ -283,7 +283,7 @@ static void btstack_crypto_aes128_start(const sm_key_t key, const sm_key_t plain
     reverse_128(key, key_flipped);
     reverse_128(plaintext, plaintext_flipped);
     btstack_crypto_wait_for_hci_result = 1;
-    hci_send_cmd(&hci_le_encrypt, key_flipped, plaintext_flipped);
+    hci_cmd_send(&hci_le_encrypt, key_flipped, plaintext_flipped);
 }
 
 static inline void btstack_crypto_cmac_next_state(void){
@@ -863,7 +863,7 @@ static void btstack_crypto_run(void){
     	switch (btstack_crypto->operation){
     		case BTSTACK_CRYPTO_RANDOM:
     			btstack_crypto_wait_for_hci_result = true;
-    		    hci_send_cmd(&hci_le_rand);
+    		    hci_cmd_send(&hci_le_rand);
     		    break;
     		case BTSTACK_CRYPTO_AES128:
                 btstack_crypto_aes128 = (btstack_crypto_aes128_t *) btstack_crypto;
@@ -949,18 +949,18 @@ static void btstack_crypto_run(void){
                         btstack_crypto_ecc_p256_key_generation_state = ECC_P256_KEY_GENERATION_GENERATING_RANDOM;
                         btstack_crypto_ecc_p256_random_len = 0;
                         btstack_crypto_wait_for_hci_result = true;
-                        hci_send_cmd(&hci_le_rand);
+                        hci_cmd_send(&hci_le_rand);
 #else
                         btstack_crypto_ecc_p256_key_generation_state = ECC_P256_KEY_GENERATION_W4_KEY;
                         btstack_crypto_wait_for_hci_result = 1;
-                        hci_send_cmd(&hci_le_read_local_p256_public_key);
+                        hci_cmd_send(&hci_le_read_local_p256_public_key);
 #endif
                         break;
 #ifdef USE_SOFTWARE_ECC_P256_IMPLEMENTATION
                     case ECC_P256_KEY_GENERATION_GENERATING_RANDOM:
                         log_info("more ecc random");
                         btstack_crypto_wait_for_hci_result = true;
-                        hci_send_cmd(&hci_le_rand);
+                        hci_cmd_send(&hci_le_rand);
                         break;
 #endif
                     default:
@@ -976,7 +976,7 @@ static void btstack_crypto_run(void){
                 (*btstack_crypto_ec_p192->btstack_crypto.context_callback.callback)(btstack_crypto_ec_p192->btstack_crypto.context_callback.context);
 #else
                 btstack_crypto_wait_for_hci_result = 1;
-                hci_send_cmd(&hci_le_generate_dhkey, &btstack_crypto_ec_p192->public_key[0], &btstack_crypto_ec_p192->public_key[32]);
+                hci_cmd_send(&hci_le_generate_dhkey, &btstack_crypto_ec_p192->public_key[0], &btstack_crypto_ec_p192->public_key[32]);
 #endif
                 break;
 

@@ -2376,7 +2376,7 @@ static bool sm_run_basic(void){
             // responder side
             case SM_RESPONDER_PH0_SEND_LTK_REQUESTED_NEGATIVE_REPLY:
                 sm_connection->sm_engine_state = SM_RESPONDER_IDLE;
-                hci_send_cmd(&hci_le_long_term_key_negative_reply, sm_connection->sm_handle);
+                hci_cmd_send(&hci_le_long_term_key_negative_reply, sm_connection->sm_handle);
                 return true;
 
 #ifdef ENABLE_LE_SECURE_CONNECTIONS
@@ -2385,7 +2385,7 @@ static bool sm_run_basic(void){
                     case IRK_LOOKUP_FAILED:
                         log_info("LTK Request: IRK Lookup Failed)");
                         sm_connection->sm_engine_state = SM_RESPONDER_IDLE;
-                        hci_send_cmd(&hci_le_long_term_key_negative_reply, sm_connection->sm_handle);
+                        hci_cmd_send(&hci_le_long_term_key_negative_reply, sm_connection->sm_handle);
                         return true;
                     default:
                         break;
@@ -2939,7 +2939,7 @@ static void sm_run(void){
                 log_info("sm: hci_le_start_encryption ediv 0x%04x", setup->sm_peer_ediv);
                 uint32_t rand_high = big_endian_read_32(setup->sm_peer_rand, 0);
                 uint32_t rand_low  = big_endian_read_32(setup->sm_peer_rand, 4);
-                hci_send_cmd(&hci_le_start_encryption, connection->sm_handle,rand_low, rand_high, setup->sm_peer_ediv, peer_ltk_flipped);
+                hci_cmd_send(&hci_le_start_encryption, connection->sm_handle,rand_low, rand_high, setup->sm_peer_ediv, peer_ltk_flipped);
 
                 // notify after sending
                 sm_reencryption_started(connection);
@@ -3002,7 +3002,7 @@ static void sm_run(void){
 						}
 						log_info("LTK Request: ediv & random are empty, but no stored LTK (IRK Lookup Succeeded)");
 						connection->sm_engine_state = SM_RESPONDER_IDLE;
-						hci_send_cmd(&hci_le_long_term_key_negative_reply, connection->sm_handle);
+						hci_cmd_send(&hci_le_long_term_key_negative_reply, connection->sm_handle);
 						return;
 					default:
 						// just wait until IRK lookup is completed
@@ -3183,7 +3183,7 @@ static void sm_run(void){
                 sm_key_t stk_flipped;
                 reverse_128(setup->sm_ltk, stk_flipped);
                 connection->sm_engine_state = SM_PH2_W4_CONNECTION_ENCRYPTED;
-                hci_send_cmd(&hci_le_long_term_key_request_reply, connection->sm_handle, stk_flipped);
+                hci_cmd_send(&hci_le_long_term_key_request_reply, connection->sm_handle, stk_flipped);
                 return;
             }
             case SM_RESPONDER_PH4_SEND_LTK_REPLY: {
@@ -3196,7 +3196,7 @@ static void sm_run(void){
                 sm_key_t ltk_flipped;
                 reverse_128(setup->sm_ltk, ltk_flipped);
                 connection->sm_engine_state = SM_PH4_W4_CONNECTION_ENCRYPTED;
-                hci_send_cmd(&hci_le_long_term_key_request_reply, connection->sm_handle, ltk_flipped);
+                hci_cmd_send(&hci_le_long_term_key_request_reply, connection->sm_handle, ltk_flipped);
                 return;
             }
 
@@ -3230,7 +3230,7 @@ static void sm_run(void){
                 sm_key_t stk_flipped;
                 reverse_128(setup->sm_ltk, stk_flipped);
                 connection->sm_engine_state = SM_PH2_W4_CONNECTION_ENCRYPTED;
-                hci_send_cmd(&hci_le_start_encryption, connection->sm_handle, 0, 0, 0, stk_flipped);
+                hci_cmd_send(&hci_le_start_encryption, connection->sm_handle, 0, 0, 0, stk_flipped);
                 return;
             }
 #endif

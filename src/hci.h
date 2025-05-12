@@ -847,7 +847,7 @@ typedef enum hci_init_state{
     HCI_INIT_SET_EVENT_MASK,
     HCI_INIT_W4_SET_EVENT_MASK,
     HCI_INIT_SET_EVENT_MASK_2,
-    HCI_INIT_W4_SET_EVENT_MASK_2,
+    HCI_INIT_W4_SET_EVENT_MASK_2,    //7
 
 #ifdef ENABLE_CLASSIC
     HCI_INIT_WRITE_SIMPLE_PAIRING_MODE,
@@ -857,7 +857,7 @@ typedef enum hci_init_state{
     HCI_INIT_WRITE_SECURE_CONNECTIONS_HOST_ENABLE,
     HCI_INIT_W4_WRITE_SECURE_CONNECTIONS_HOST_ENABLE,
     HCI_INIT_SET_MIN_ENCRYPTION_KEY_SIZE,
-    HCI_INIT_W4_SET_MIN_ENCRYPTION_KEY_SIZE,
+    HCI_INIT_W4_SET_MIN_ENCRYPTION_KEY_SIZE,   //15
 
 #ifdef ENABLE_SCO_OVER_HCI
     // SCO over HCI
@@ -890,14 +890,14 @@ typedef enum hci_init_state{
     HCI_INIT_WRITE_LE_HOST_SUPPORTED,
     HCI_INIT_W4_WRITE_LE_HOST_SUPPORTED,
     HCI_INIT_LE_SET_EVENT_MASK,
-    HCI_INIT_W4_LE_SET_EVENT_MASK,
+    HCI_INIT_W4_LE_SET_EVENT_MASK,   //21
 #endif
 
 #ifdef ENABLE_LE_DATA_LENGTH_EXTENSION
     HCI_INIT_LE_READ_MAX_DATA_LENGTH,
     HCI_INIT_W4_LE_READ_MAX_DATA_LENGTH,
     HCI_INIT_LE_WRITE_SUGGESTED_DATA_LENGTH,
-    HCI_INIT_W4_LE_WRITE_SUGGESTED_DATA_LENGTH,
+    HCI_INIT_W4_LE_WRITE_SUGGESTED_DATA_LENGTH,  //25
 #endif
 
 #ifdef ENABLE_LE_CENTRAL
@@ -908,7 +908,7 @@ typedef enum hci_init_state{
 #ifdef ENABLE_LE_PERIPHERAL
 #ifdef ENABLE_LE_EXTENDED_ADVERTISING
     HCI_INIT_LE_READ_MAX_ADV_DATA_LEN,
-    HCI_INIT_W4_LE_READ_MAX_ADV_DATA_LEN,
+    HCI_INIT_W4_LE_READ_MAX_ADV_DATA_LEN,   //27
 #endif
 #endif
 
@@ -919,7 +919,7 @@ typedef enum hci_init_state{
 
 #ifdef ENABLE_BLE
     HCI_INIT_LE_SET_HOST_FEATURE_CONNECTION_SUBRATING,
-    HCI_INIT_W4_LE_SET_HOST_FEATURE_CONNECTION_SUBRATING,
+    HCI_INIT_W4_LE_SET_HOST_FEATURE_CONNECTION_SUBRATING,   //29
 #endif
 
     HCI_INIT_DONE,
@@ -1489,7 +1489,7 @@ bool hci_can_send_command_packet_now(void);
  * @brief Creates and sends HCI command packets based on a template and a list of parameters. Will return error if outgoing data buffer is occupied.
  * @return status
  */
-uint8_t hci_send_cmd(const hci_cmd_t * cmd, ...);
+uint8_t hci_cmd_send(const hci_cmd_t * cmd, ...);
 
 
 // Sending SCO Packets
@@ -1613,7 +1613,7 @@ bool hci_is_le_identity_address_type(bd_addr_type_t address_type);
 
 
 /**
- * va_list version of hci_send_cmd, call hci_send_cmd_packet
+ * va_list version of hci_cmd_send, call hci_send_cmd_packet
  * @return status
  */
 uint8_t hci_send_cmd_va_arg(const hci_cmd_t * cmd, va_list argptr);

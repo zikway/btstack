@@ -169,7 +169,6 @@ static void btstack_run_loop_freertos_execute(void) {
         logd("btstack %s %d ", __FILE__, __LINE__);
         // execute callbacks - protect list with mutex
         while (1){
-            logd("btstack %s %d ", __FILE__, __LINE__);
             xSemaphoreTake(btstack_run_loop_callbacks_mutex, portMAX_DELAY);
             btstack_context_callback_registration_t * callback_registration = (btstack_context_callback_registration_t *) btstack_linked_list_pop(&btstack_run_loop_base_callbacks);
             xSemaphoreGive(btstack_run_loop_callbacks_mutex);
@@ -181,7 +180,6 @@ static void btstack_run_loop_freertos_execute(void) {
 
         // process registered function calls on run loop thread (deprecated)
         while (true){
-            logd("btstack %s %d ", __FILE__, __LINE__);
             function_call_t message = { NULL, NULL };
             BaseType_t res = xQueueReceive( btstack_run_loop_queue, &message, 0);
             if (res == pdFALSE) break;
@@ -189,7 +187,7 @@ static void btstack_run_loop_freertos_execute(void) {
                 message.fn(message.arg);
             }
         }
-        logd("btstack %s %d ", __FILE__, __LINE__);
+
         // process timers
         uint32_t now = btstack_run_loop_freertos_get_time_ms();
         btstack_run_loop_base_process_timers(now);
@@ -216,7 +214,7 @@ static void btstack_run_loop_freertos_execute(void) {
 #else
         xEventGroupWaitBits(btstack_run_loop_event_group, EVENT_GROUP_FLAG_RUN_LOOP, 1, 0, pdMS_TO_TICKS(timeout_ms));
 #endif
-        //os_time_dly(500); //ÓÉÓÚxTaskNotifyWaitÎÞ·¨Ê¹ÓÃ£¬²âÊÔbt loop£¬ÓÃÓÚ×öÈÎÎñÇÐ»»£¬·ÀÖ¹ÖØÆô
+        //os_time_dly(500); //ï¿½ï¿½ï¿½ï¿½xTaskNotifyWaitï¿½Þ·ï¿½Ê¹ï¿½Ã£ï¿½ï¿½ï¿½ï¿½ï¿½bt loopï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ð»ï¿½ï¿½ï¿½ï¿½ï¿½Ö¹ï¿½ï¿½ï¿½ï¿½
     }
 }
 

@@ -1741,7 +1741,7 @@ static void gap_run_set_eir_data(void){
 static void hci_run_gap_tasks_classic(void){
     if ((hci_stack->gap_tasks_classic & GAP_TASK_SET_CLASS_OF_DEVICE) != 0) {
         hci_stack->gap_tasks_classic &= ~GAP_TASK_SET_CLASS_OF_DEVICE;
-        hci_send_cmd(&hci_write_class_of_device, hci_stack->class_of_device);
+        hci_cmd_send(&hci_write_class_of_device, hci_stack->class_of_device);
         return;
     }
     if ((hci_stack->gap_tasks_classic & GAP_TASK_SET_LOCAL_NAME) != 0) {
@@ -1756,43 +1756,43 @@ static void hci_run_gap_tasks_classic(void){
     }
     if ((hci_stack->gap_tasks_classic & GAP_TASK_SET_DEFAULT_LINK_POLICY) != 0) {
         hci_stack->gap_tasks_classic &= ~GAP_TASK_SET_DEFAULT_LINK_POLICY;
-        hci_send_cmd(&hci_write_default_link_policy_setting, hci_stack->default_link_policy_settings);
+        hci_cmd_send(&hci_write_default_link_policy_setting, hci_stack->default_link_policy_settings);
         return;
     }
     // write page scan activity
     if ((hci_stack->gap_tasks_classic & GAP_TASK_WRITE_PAGE_SCAN_ACTIVITY) != 0) {
         hci_stack->gap_tasks_classic &= ~GAP_TASK_WRITE_PAGE_SCAN_ACTIVITY;
-        hci_send_cmd(&hci_write_page_scan_activity, hci_stack->new_page_scan_interval, hci_stack->new_page_scan_window);
+        hci_cmd_send(&hci_write_page_scan_activity, hci_stack->new_page_scan_interval, hci_stack->new_page_scan_window);
         return;
     }
     // write page scan type
     if ((hci_stack->gap_tasks_classic & GAP_TASK_WRITE_PAGE_SCAN_TYPE) != 0) {
         hci_stack->gap_tasks_classic &= ~GAP_TASK_WRITE_PAGE_SCAN_TYPE;
-        hci_send_cmd(&hci_write_page_scan_type, hci_stack->new_page_scan_type);
+        hci_cmd_send(&hci_write_page_scan_type, hci_stack->new_page_scan_type);
         return;
     }
     // write page timeout
     if ((hci_stack->gap_tasks_classic & GAP_TASK_WRITE_PAGE_TIMEOUT) != 0) {
         hci_stack->gap_tasks_classic &= ~GAP_TASK_WRITE_PAGE_TIMEOUT;
-        hci_send_cmd(&hci_write_page_timeout, hci_stack->page_timeout);
+        hci_cmd_send(&hci_write_page_timeout, hci_stack->page_timeout);
         return;
     }
     // send scan enable
     if ((hci_stack->gap_tasks_classic & GAP_TASK_WRITE_SCAN_ENABLE) != 0) {
         hci_stack->gap_tasks_classic &= ~GAP_TASK_WRITE_SCAN_ENABLE;
-        hci_send_cmd(&hci_write_scan_enable, hci_stack->new_scan_enable_value);
+        hci_cmd_send(&hci_write_scan_enable, hci_stack->new_scan_enable_value);
         return;
     }
     // send write scan activity
     if ((hci_stack->gap_tasks_classic & GAP_TASK_WRITE_INQUIRY_SCAN_ACTIVITY) != 0) {
         hci_stack->gap_tasks_classic &= ~GAP_TASK_WRITE_INQUIRY_SCAN_ACTIVITY;
-        hci_send_cmd(&hci_write_inquiry_scan_activity, hci_stack->inquiry_scan_interval, hci_stack->inquiry_scan_window);
+        hci_cmd_send(&hci_write_inquiry_scan_activity, hci_stack->inquiry_scan_interval, hci_stack->inquiry_scan_window);
         return;
     }
     // send write inquiry transmit power level
     if ((hci_stack->gap_tasks_classic & GAP_TASK_WRITE_INQUIRY_TX_POWER_LEVEL) != 0) {
         hci_stack->gap_tasks_classic &= ~GAP_TASK_WRITE_INQUIRY_TX_POWER_LEVEL;
-        hci_send_cmd(&hci_write_inquiry_transmit_power_level, hci_stack->inquiry_tx_power_level);
+        hci_cmd_send(&hci_write_inquiry_transmit_power_level, hci_stack->inquiry_tx_power_level);
         return;
     }
 }
@@ -1849,7 +1849,7 @@ static void hci_initialization_timeout_handler(btstack_timer_source_t * ds){
         case HCI_INIT_W4_CUSTOM_INIT_BCM_DELAY:
             // otherwise continue
             hci_stack->substate = HCI_INIT_W4_READ_LOCAL_SUPPORTED_COMMANDS;
-            hci_send_cmd(&hci_read_local_supported_commands);
+            hci_cmd_send(&hci_read_local_supported_commands);
             break;
         default:
             break;
@@ -1859,6 +1859,7 @@ static void hci_initialization_timeout_handler(btstack_timer_source_t * ds){
 
 static void hci_initializing_next_state(void){
     hci_stack->substate = (hci_substate_t )( ((int) hci_stack->substate) + 1);
+    log_info("hci_initializing_next_state %d", hci_stack->substate);
 }
 
 static void hci_init_done(void){
@@ -1894,11 +1895,12 @@ static void hci_initializing_run(void){
 #endif
             // send command
             hci_stack->substate = HCI_INIT_W4_SEND_RESET;
-            hci_send_cmd(&hci_reset);
+            hci_cmd_send(&hci_reset);
             break;
         case HCI_INIT_SEND_READ_LOCAL_VERSION_INFORMATION:
-            hci_send_cmd(&hci_read_local_version_information);
+            hci_cmd_send(&hci_read_local_version_information);   //dgh todo 数据接收处理task 和bt task不同导致时序问题。
             hci_stack->substate = HCI_INIT_W4_SEND_READ_LOCAL_VERSION_INFORMATION;
+            log_debug("dgh HCI_INIT_SEND_READ_LOCAL_VERSION_INFORMATION");
             break;
 
 #ifndef HAVE_HOST_CONTROLLER_API
@@ -1910,12 +1912,12 @@ static void hci_initializing_run(void){
             btstack_run_loop_add_timer(&hci_stack->timeout);
             // send command
             hci_stack->substate = HCI_INIT_W4_CUSTOM_INIT_CSR_WARM_BOOT;
-            hci_send_cmd(&hci_reset);
+            hci_cmd_send(&hci_reset);
             break;
         case HCI_INIT_SEND_RESET_ST_WARM_BOOT:
             hci_state_reset();
             hci_stack->substate = HCI_INIT_W4_SEND_RESET_ST_WARM_BOOT;
-            hci_send_cmd(&hci_reset);
+            hci_cmd_send(&hci_reset);
             break;
         case HCI_INIT_SEND_BAUD_CHANGE_BCM: {
             hci_reserve_packet_buffer();
@@ -1934,7 +1936,7 @@ static void hci_initializing_run(void){
             break;
         case HCI_INIT_SEND_READ_LOCAL_NAME:
 #ifdef ENABLE_CLASSIC
-            hci_send_cmd(&hci_read_local_name);
+            hci_cmd_send(&hci_read_local_name);
             hci_stack->substate = HCI_INIT_W4_SEND_READ_LOCAL_NAME;
             break;
 #endif
@@ -2014,7 +2016,7 @@ static void hci_initializing_run(void){
                 // Custom Pre-Init complete, start regular init with HCI Reset
                 if (hci_stack->substate == HCI_INIT_CUSTOM_PRE_INIT){
                     hci_stack->substate = HCI_INIT_W4_SEND_RESET;
-                    hci_send_cmd(&hci_reset);
+                    hci_cmd_send(&hci_reset);
                     break;
                 }
 
@@ -2046,17 +2048,17 @@ static void hci_initializing_run(void){
 
         case HCI_INIT_READ_LOCAL_SUPPORTED_COMMANDS:
             hci_stack->substate = HCI_INIT_W4_READ_LOCAL_SUPPORTED_COMMANDS;
-            hci_send_cmd(&hci_read_local_supported_commands);
+            hci_cmd_send(&hci_read_local_supported_commands);
             break;
         case HCI_INIT_READ_BD_ADDR:
             hci_stack->substate = HCI_INIT_W4_READ_BD_ADDR;
-            hci_send_cmd(&hci_read_bd_addr);
+            hci_cmd_send(&hci_read_bd_addr);
             break;
         case HCI_INIT_READ_BUFFER_SIZE:
             // only read buffer size if supported
             if (hci_command_supported(SUPPORTED_HCI_COMMAND_READ_BUFFER_SIZE)){
                 hci_stack->substate = HCI_INIT_W4_READ_BUFFER_SIZE;
-                hci_send_cmd(&hci_read_buffer_size);
+                hci_cmd_send(&hci_read_buffer_size);
                 break;
             }
 
@@ -2064,17 +2066,17 @@ static void hci_initializing_run(void){
 
         case HCI_INIT_READ_LOCAL_SUPPORTED_FEATURES:
             hci_stack->substate = HCI_INIT_W4_READ_LOCAL_SUPPORTED_FEATURES;
-            hci_send_cmd(&hci_read_local_supported_features);
+            hci_cmd_send(&hci_read_local_supported_features);
             break;
 
 #ifdef ENABLE_HCI_CONTROLLER_TO_HOST_FLOW_CONTROL
         case HCI_INIT_SET_CONTROLLER_TO_HOST_FLOW_CONTROL:
             hci_stack->substate = HCI_INIT_W4_SET_CONTROLLER_TO_HOST_FLOW_CONTROL;
-            hci_send_cmd(&hci_set_controller_to_host_flow_control, 3);  // ACL + SCO Flow Control
+            hci_cmd_send(&hci_set_controller_to_host_flow_control, 3);  // ACL + SCO Flow Control
             break;
         case HCI_INIT_HOST_BUFFER_SIZE:
             hci_stack->substate = HCI_INIT_W4_HOST_BUFFER_SIZE;
-            hci_send_cmd(&hci_host_buffer_size, HCI_HOST_ACL_PACKET_LEN, HCI_HOST_SCO_PACKET_LEN,
+            hci_cmd_send(&hci_host_buffer_size, HCI_HOST_ACL_PACKET_LEN, HCI_HOST_SCO_PACKET_LEN,
                                                 HCI_HOST_ACL_PACKET_NUM, HCI_HOST_SCO_PACKET_NUM);
             break;
 #endif
@@ -2082,10 +2084,10 @@ static void hci_initializing_run(void){
         case HCI_INIT_SET_EVENT_MASK:
             hci_stack->substate = HCI_INIT_W4_SET_EVENT_MASK;
             if (hci_le_supported()){
-                hci_send_cmd(&hci_set_event_mask,0xFFFFFFFFU, 0x3FFFFFFFU);
+                hci_cmd_send(&hci_set_event_mask,0xFFFFFFFFU, 0x3FFFFFFFU);
             } else {
                 // Kensington Bluetooth 2.1 USB Dongle (CSR Chipset) returns an error for 0xffff...
-                hci_send_cmd(&hci_set_event_mask,0xFFFFFFFFU, 0x1FFFFFFFU);
+                hci_cmd_send(&hci_set_event_mask,0xFFFFFFFFU, 0x1FFFFFFFU);
             }
             break;
 
@@ -2096,7 +2098,7 @@ static void hci_initializing_run(void){
             && (hci_stack->manufacturer != BLUETOOTH_COMPANY_ID_PACKETCRAFT_INC)){
                 hci_stack->substate = HCI_INIT_W4_SET_EVENT_MASK_2;
                 // Encryption Change Event v2 - bit 25
-                hci_send_cmd(&hci_set_event_mask_2,0x02000000U, 0x0);
+                hci_cmd_send(&hci_set_event_mask_2,0x02000000U, 0x0);
                 break;
             }
 
@@ -2106,7 +2108,7 @@ static void hci_initializing_run(void){
         case HCI_INIT_WRITE_SIMPLE_PAIRING_MODE:
             if (hci_classic_supported() && gap_ssp_supported()){
                 hci_stack->substate = HCI_INIT_W4_WRITE_SIMPLE_PAIRING_MODE;
-                hci_send_cmd(&hci_write_simple_pairing_mode, hci_stack->ssp_enable);
+                hci_cmd_send(&hci_write_simple_pairing_mode, hci_stack->ssp_enable);
                 break;
             }
 
@@ -2115,7 +2117,7 @@ static void hci_initializing_run(void){
         case HCI_INIT_WRITE_INQUIRY_MODE:
             if (hci_classic_supported()){
                 hci_stack->substate = HCI_INIT_W4_WRITE_INQUIRY_MODE;
-                hci_send_cmd(&hci_write_inquiry_mode, (int) hci_stack->inquiry_mode);
+                hci_cmd_send(&hci_write_inquiry_mode, (int) hci_stack->inquiry_mode);
                 break;
             }
 
@@ -2127,7 +2129,7 @@ static void hci_initializing_run(void){
             && hci_command_supported(SUPPORTED_HCI_COMMAND_WRITE_SECURE_CONNECTIONS_HOST)) {
                 hci_stack->secure_connections_active = true;
                 hci_stack->substate = HCI_INIT_W4_WRITE_SECURE_CONNECTIONS_HOST_ENABLE;
-                hci_send_cmd(&hci_write_secure_connections_host_support, 1);
+                hci_cmd_send(&hci_write_secure_connections_host_support, 1);
                 break;
             }
 
@@ -2137,7 +2139,7 @@ static void hci_initializing_run(void){
             // skip set min encryption key size
             if (hci_classic_supported() && hci_command_supported(SUPPORTED_HCI_COMMAND_SET_MIN_ENCRYPTION_KEY_SIZE)) {
                 hci_stack->substate = HCI_INIT_W4_SET_MIN_ENCRYPTION_KEY_SIZE;
-                hci_send_cmd(&hci_set_min_encryption_key_size, hci_stack->gap_required_encyrption_key_size);
+                hci_cmd_send(&hci_set_min_encryption_key_size, hci_stack->gap_required_encyrption_key_size);
                 break;
             }
 
@@ -2150,7 +2152,7 @@ static void hci_initializing_run(void){
             if (hci_classic_supported()
             && hci_command_supported(SUPPORTED_HCI_COMMAND_WRITE_SYNCHRONOUS_FLOW_CONTROL_ENABLE)) {
                 hci_stack->substate = HCI_INIT_W4_WRITE_SYNCHRONOUS_FLOW_CONTROL_ENABLE;
-                hci_send_cmd(&hci_write_synchronous_flow_control_enable, 1); // SCO tracking enabled
+                hci_cmd_send(&hci_write_synchronous_flow_control_enable, 1); // SCO tracking enabled
                 break;
             }
             /* fall through */
@@ -2160,7 +2162,7 @@ static void hci_initializing_run(void){
             if (hci_classic_supported()
             && hci_command_supported(SUPPORTED_HCI_COMMAND_WRITE_DEFAULT_ERRONEOUS_DATA_REPORTING)) {
                 hci_stack->substate = HCI_INIT_W4_WRITE_DEFAULT_ERRONEOUS_DATA_REPORTING;
-                hci_send_cmd(&hci_write_default_erroneous_data_reporting, 1);
+                hci_cmd_send(&hci_write_default_erroneous_data_reporting, 1);
                 break;
             }
 #endif
@@ -2174,16 +2176,16 @@ static void hci_initializing_run(void){
                 hci_stack->substate = HCI_INIT_W4_BCM_WRITE_SCO_PCM_INT;
 #ifdef ENABLE_SCO_OVER_HCI
                 log_info("BCM: Route SCO data via HCI transport");
-                hci_send_cmd(&hci_bcm_write_sco_pcm_int, 1, 0, 0, 0, 0);
+                hci_cmd_send(&hci_bcm_write_sco_pcm_int, 1, 0, 0, 0, 0);
 #endif
 #ifdef ENABLE_SCO_OVER_PCM
                 log_info("BCM: Route SCO data via PCM interface");
 #ifdef ENABLE_BCM_PCM_WBS
                 // 512 kHz bit clock for 2 channels x 16 bit x 16 kHz
-                hci_send_cmd(&hci_bcm_write_sco_pcm_int, 0, 2, 0, 1, 1);
+                hci_cmd_send(&hci_bcm_write_sco_pcm_int, 0, 2, 0, 1, 1);
 #else
                 // 256 kHz bit clock for 2 channels x 16 bit x 8 kHz
-                hci_send_cmd(&hci_bcm_write_sco_pcm_int, 0, 1, 0, 1, 1);
+                hci_cmd_send(&hci_bcm_write_sco_pcm_int, 0, 1, 0, 1, 1);
 #endif
 #endif
                 break;
@@ -2199,10 +2201,10 @@ static void hci_initializing_run(void){
                 log_info("BCM: Config PCM interface for I2S");
 #ifdef ENABLE_BCM_PCM_WBS
                 // 512 kHz bit clock for 2 channels x 16 bit x 8 kHz
-                hci_send_cmd(&hci_bcm_write_i2spcm_interface_param, 1, 1, 0, 2);
+                hci_cmd_send(&hci_bcm_write_i2spcm_interface_param, 1, 1, 0, 2);
 #else
                 // 256 kHz bit clock for 2 channels x 16 bit x 8 kHz
-                hci_send_cmd(&hci_bcm_write_i2spcm_interface_param, 1, 1, 0, 1);
+                hci_cmd_send(&hci_bcm_write_i2spcm_interface_param, 1, 1, 0, 1);
 #endif
                 break;
             }
@@ -2211,7 +2213,7 @@ static void hci_initializing_run(void){
                 hci_stack->substate = HCI_INIT_W4_BCM_WRITE_PCM_DATA_FORMAT_PARAM;
                 log_info("BCM: Config PCM Data format");
                 // msb first, fill bits 0, left justified
-                hci_send_cmd(&hci_bcm_write_pcm_data_format_param, 0, 0, 3, 3, 0);
+                hci_cmd_send(&hci_bcm_write_pcm_data_format_param, 0, 0, 3, 3, 0);
                 break;
             }
 #ifdef HAVE_BCM_PCM2
@@ -2231,7 +2233,7 @@ static void hci_initializing_run(void){
                 ch_0_period = 0;
 #endif
                 log_info("BCM: Config PCM2 - op mode %u, pcm clock %" PRIu32 ", ch0_period %u", op_mode, pcm_clock_freq, ch_0_period);
-                hci_send_cmd(&hci_bcm_pcm2_setup,
+                hci_cmd_send(&hci_bcm_pcm2_setup,
                              0x00, // Action = Write
                              0x00, // Test_Options = None
                              op_mode, // Op_Mode
@@ -2270,9 +2272,9 @@ static void hci_initializing_run(void){
             if (hci_le_supported()){
                 hci_stack->substate = HCI_INIT_W4_LE_READ_BUFFER_SIZE;
                 if (hci_command_supported(SUPPORTED_HCI_COMMAND_LE_READ_BUFFER_SIZE_V2)){
-                    hci_send_cmd(&hci_le_read_buffer_size_v2);
+                    hci_cmd_send(&hci_le_read_buffer_size_v2);
                 } else {
-                    hci_send_cmd(&hci_le_read_buffer_size);
+                    hci_cmd_send(&hci_le_read_buffer_size);
                 }
                 break;
             }
@@ -2285,7 +2287,7 @@ static void hci_initializing_run(void){
             && hci_command_supported(SUPPORTED_HCI_COMMAND_WRITE_LE_HOST_SUPPORTED)) {
                 // LE Supported Host = 1, Simultaneous Host = 0
                 hci_stack->substate = HCI_INIT_W4_WRITE_LE_HOST_SUPPORTED;
-                hci_send_cmd(&hci_write_le_host_supported, 1, 0);
+                hci_cmd_send(&hci_write_le_host_supported, 1, 0);
                 break;
             }
 
@@ -2295,9 +2297,9 @@ static void hci_initializing_run(void){
             if (hci_le_supported()){
                 hci_stack->substate = HCI_INIT_W4_LE_SET_EVENT_MASK;
 #ifdef ENABLE_LE_ENHANCED_CONNECTION_COMPLETE_EVENT
-                hci_send_cmd(&hci_le_set_event_mask, 0xffffffff, 0x0107); // all events from core v5.3
+                hci_cmd_send(&hci_le_set_event_mask, 0xffffffff, 0x0107); // all events from core v5.3
 #else
-                hci_send_cmd(&hci_le_set_event_mask, 0xfffffdff, 0x0007); // all events from core v5.3 without LE Enhanced Connection Complete
+                hci_cmd_send(&hci_le_set_event_mask, 0xfffffdff, 0x0007); // all events from core v5.3 without LE Enhanced Connection Complete
 #endif
                 break;
             }
@@ -2310,7 +2312,7 @@ static void hci_initializing_run(void){
             if (hci_le_supported()
             && hci_command_supported(SUPPORTED_HCI_COMMAND_LE_READ_MAXIMUM_DATA_LENGTH)) {
                 hci_stack->substate = HCI_INIT_W4_LE_READ_MAX_DATA_LENGTH;
-                hci_send_cmd(&hci_le_read_maximum_data_length);
+                hci_cmd_send(&hci_le_read_maximum_data_length);
                 break;
             }
 
@@ -2320,7 +2322,7 @@ static void hci_initializing_run(void){
             if (hci_le_supported()
             && hci_command_supported(SUPPORTED_HCI_COMMAND_LE_WRITE_SUGGESTED_DEFAULT_DATA_LENGTH)) {
                 hci_stack->substate = HCI_INIT_W4_LE_WRITE_SUGGESTED_DATA_LENGTH;
-                hci_send_cmd(&hci_le_write_suggested_default_data_length, hci_stack->le_supported_max_tx_octets, hci_stack->le_supported_max_tx_time);
+                hci_cmd_send(&hci_le_write_suggested_default_data_length, hci_stack->le_supported_max_tx_octets, hci_stack->le_supported_max_tx_time);
                 break;
             }
 #endif
@@ -2331,7 +2333,7 @@ static void hci_initializing_run(void){
         case HCI_INIT_READ_WHITE_LIST_SIZE:
             if (hci_le_supported()){
                 hci_stack->substate = HCI_INIT_W4_READ_WHITE_LIST_SIZE;
-                hci_send_cmd(&hci_le_read_white_list_size);
+                hci_cmd_send(&hci_le_read_white_list_size);
                 break;
             }
 
@@ -2344,7 +2346,7 @@ static void hci_initializing_run(void){
         case HCI_INIT_LE_READ_MAX_ADV_DATA_LEN:
             if (hci_le_extended_advertising_supported()){
                 hci_stack->substate = HCI_INIT_W4_LE_READ_MAX_ADV_DATA_LEN;
-                hci_send_cmd(&hci_le_read_maximum_advertising_data_length);
+                hci_cmd_send(&hci_le_read_maximum_advertising_data_length);
                 break;
             }
 #endif
@@ -2356,7 +2358,7 @@ static void hci_initializing_run(void){
         case HCI_INIT_LE_SET_HOST_FEATURE_CONNECTED_ISO_STREAMS:
             if (hci_le_supported() && hci_command_supported(SUPPORTED_HCI_COMMAND_LE_SET_HOST_FEATURE_V1)) {
                 hci_stack->substate = HCI_INIT_W4_LE_SET_HOST_FEATURE_CONNECTED_ISO_STREAMS;
-                hci_send_cmd(&hci_le_set_host_feature, 32, 1);
+                hci_cmd_send(&hci_le_set_host_feature, 32, 1);
                 break;
             }
 #endif
@@ -2366,7 +2368,7 @@ static void hci_initializing_run(void){
         case HCI_INIT_LE_SET_HOST_FEATURE_CONNECTION_SUBRATING:
             if (hci_le_supported() && hci_command_supported(SUPPORTED_HCI_COMMAND_LE_SET_HOST_FEATURE_V1)) {
                 hci_stack->substate = HCI_INIT_W4_LE_SET_HOST_FEATURE_CONNECTION_SUBRATING;
-                hci_send_cmd(&hci_le_set_host_feature, 38, 1);
+                hci_cmd_send(&hci_le_set_host_feature, 38, 1);
                 break;
             }
 #endif
@@ -2395,6 +2397,7 @@ static void hci_initializing_run(void){
             break;
 
         default:
+            log_debug("hci_stack->substate dont process at substate %u", hci_stack->substate);
             return;
     }
 }
@@ -2446,7 +2449,7 @@ static bool hci_initializing_event_handler_command_completed(const uint8_t * pac
 }
 
 static void hci_initializing_event_handler(const uint8_t * packet, uint16_t size){
-
+    log_info("hci_initializing_event_handler xxx");
     UNUSED(size);   // ok: less than 6 bytes are read from our buffer
 
     bool command_completed =  hci_initializing_event_handler_command_completed(packet);
@@ -5602,7 +5605,7 @@ static void hci_halting_run(void) {
 
             if (hci_stack->connectable || hci_stack->discoverable){
                 hci_stack->substate = HCI_HALTING_LE_ADV_STOP;
-                hci_send_cmd(&hci_write_scan_enable, 0);
+                hci_cmd_send(&hci_write_scan_enable, 0);
                 return;
             }
 #endif
@@ -5627,7 +5630,7 @@ static void hci_halting_run(void) {
                     le_advertising_set_t * advertising_set = (le_advertising_set_t*) btstack_linked_list_iterator_next(&it);
                     if ((advertising_set->state & LE_ADVERTISEMENT_STATE_PERIODIC_ACTIVE) != 0) {
                         advertising_set->state &= ~LE_ADVERTISEMENT_STATE_PERIODIC_ACTIVE;
-                        hci_send_cmd(&hci_le_set_periodic_advertising_enable, 0, advertising_set->advertising_handle);
+                        hci_cmd_send(&hci_le_set_periodic_advertising_enable, 0, advertising_set->advertising_handle);
                         return;
                     }
                     if ((advertising_set->state & LE_ADVERTISEMENT_STATE_ACTIVE) != 0) {
@@ -5638,7 +5641,7 @@ static void hci_halting_run(void) {
 #endif /* ENABLE_LE_PERIODIC_ADVERTISING */
                 if (stop_advertisements){
                     hci_stack->le_advertisements_state &= ~LE_ADVERTISEMENT_STATE_ACTIVE;
-                    hci_send_cmd(&hci_le_set_extended_advertising_enable, 0, 0, NULL, NULL, NULL);
+                    hci_cmd_send(&hci_le_set_extended_advertising_enable, 0, 0, NULL, NULL, NULL);
                     return;
                 }
             } else
@@ -5646,7 +5649,7 @@ static void hci_halting_run(void) {
             {
                 if (stop_advertisements) {
                     hci_stack->le_advertisements_state &= ~LE_ADVERTISEMENT_STATE_ACTIVE;
-                    hci_send_cmd(&hci_le_set_advertise_enable, 0);
+                    hci_cmd_send(&hci_le_set_advertise_enable, 0);
                     return;
                 }
             }
@@ -5695,7 +5698,7 @@ static void hci_halting_run(void) {
 
                 // finally, send the disconnect command
                 connection->state = SENT_DISCONNECT;
-                hci_send_cmd(&hci_disconnect, con_handle, ERROR_CODE_REMOTE_USER_TERMINATED_CONNECTION);
+                hci_cmd_send(&hci_disconnect, con_handle, ERROR_CODE_REMOTE_USER_TERMINATED_CONNECTION);
                 return;
             }
 
@@ -5705,14 +5708,14 @@ static void hci_halting_run(void) {
                 le_audio_big_t * big = (le_audio_big_t*) hci_stack->le_audio_bigs;
                 if (big->state == LE_AUDIO_BIG_STATE_W4_TERMINATED) return;
                 big->state = LE_AUDIO_BIG_STATE_W4_TERMINATED;
-                hci_send_cmd(&hci_le_terminate_big, big->big_handle);
+                hci_cmd_send(&hci_le_terminate_big, big->big_handle);
                 return;
             }
             if (hci_stack->le_audio_big_syncs != NULL){
                 le_audio_big_sync_t * big_sync = (le_audio_big_sync_t*) hci_stack->le_audio_big_syncs;
                 if (big_sync->state == LE_AUDIO_BIG_STATE_W4_TERMINATED) return;
                 big_sync->state = LE_AUDIO_BIG_STATE_W4_TERMINATED;
-                hci_send_cmd(&hci_le_big_terminate_sync, big_sync->big_handle);
+                hci_cmd_send(&hci_le_big_terminate_sync, big_sync->big_handle);
                 return;
             }
 #endif
@@ -5764,7 +5767,7 @@ static void hci_falling_asleep_run(void){
                 if (!hci_can_send_command_packet_now()) return;
 
                 log_info("HCI_STATE_FALLING_ASLEEP, connection %p, handle %u", (void*)connection, (uint16_t)connection->con_handle);
-                hci_send_cmd(&hci_disconnect, connection->con_handle, ERROR_CODE_REMOTE_USER_TERMINATED_CONNECTION);
+                hci_cmd_send(&hci_disconnect, connection->con_handle, ERROR_CODE_REMOTE_USER_TERMINATED_CONNECTION);
 
                 // send disconnected event right away - causes higher layer connections to get closed, too.
                 hci_shutdown_connection(connection);
@@ -5776,7 +5779,7 @@ static void hci_falling_asleep_run(void){
                 if (!hci_can_send_command_packet_now()) return;
 
                 log_info("HCI_STATE_HALTING, disabling inq scans");
-                hci_send_cmd(&hci_write_scan_enable, hci_stack->connectable << 1); // drop inquiry scan but keep page scan
+                hci_cmd_send(&hci_write_scan_enable, hci_stack->connectable << 1); // drop inquiry scan but keep page scan
 
                 // continue in next substate
                 hci_stack->substate = HCI_FALLING_ASLEEP_W4_WRITE_SCAN_ENABLE;
@@ -5952,7 +5955,7 @@ static bool hci_run_general_gap_classic(void){
     if (hci_stack->decline_reason){
         uint8_t reason = hci_stack->decline_reason;
         hci_stack->decline_reason = 0;
-        hci_send_cmd(&hci_reject_connection_request, hci_stack->decline_addr, reason);
+        hci_cmd_send(&hci_reject_connection_request, hci_stack->decline_addr, reason);
         return true;
     }
 
@@ -5970,22 +5973,22 @@ static bool hci_run_general_gap_classic(void){
             uint8_t duration = hci_stack->inquiry_state;
             hci_stack->inquiry_state = GAP_INQUIRY_STATE_W4_ACTIVE;
             if (hci_stack->inquiry_max_period_length != 0){
-                hci_send_cmd(&hci_periodic_inquiry_mode, hci_stack->inquiry_max_period_length, hci_stack->inquiry_min_period_length, hci_stack->inquiry_lap, duration, 0);
+                hci_cmd_send(&hci_periodic_inquiry_mode, hci_stack->inquiry_max_period_length, hci_stack->inquiry_min_period_length, hci_stack->inquiry_lap, duration, 0);
             } else {
-                hci_send_cmd(&hci_inquiry, hci_stack->inquiry_lap, duration, 0);
+                hci_cmd_send(&hci_inquiry, hci_stack->inquiry_lap, duration, 0);
             }
             return true;
         }
     }
     if (hci_stack->inquiry_state == GAP_INQUIRY_STATE_W2_CANCEL){
         hci_stack->inquiry_state = GAP_INQUIRY_STATE_W4_CANCELLED;
-        hci_send_cmd(&hci_inquiry_cancel);
+        hci_cmd_send(&hci_inquiry_cancel);
         return true;
     }
 
     if (hci_stack->inquiry_state == GAP_INQUIRY_STATE_W2_EXIT_PERIODIC){
         hci_stack->inquiry_state = GAP_INQUIRY_STATE_W4_CANCELLED;
-        hci_send_cmd(&hci_exit_periodic_inquiry_mode);
+        hci_cmd_send(&hci_exit_periodic_inquiry_mode);
         return true;
     }
 
@@ -5996,7 +5999,7 @@ static bool hci_run_general_gap_classic(void){
 #endif
         {
             hci_stack->remote_name_state = GAP_REMOTE_NAME_STATE_W4_COMPLETE;
-            hci_send_cmd(&hci_remote_name_request, hci_stack->remote_name_addr,
+            hci_cmd_send(&hci_remote_name_request, hci_stack->remote_name_addr,
                          hci_stack->remote_name_page_scan_repetition_mode, 0, hci_stack->remote_name_clock_offset);
             return true;
         }
@@ -6006,9 +6009,9 @@ static bool hci_run_general_gap_classic(void){
     if (hci_stack->classic_read_local_oob_data){
         hci_stack->classic_read_local_oob_data = false;
         if (hci_command_supported(SUPPORTED_HCI_COMMAND_READ_LOCAL_OOB_EXTENDED_DATA_COMMAND)){
-            hci_send_cmd(&hci_read_local_extended_oob_data);
+            hci_cmd_send(&hci_read_local_extended_oob_data);
         } else {
-            hci_send_cmd(&hci_read_local_oob_data);
+            hci_cmd_send(&hci_read_local_oob_data);
         }
     }
 #endif
@@ -6021,27 +6024,27 @@ static bool hci_run_general_gap_classic(void){
                 hci_stack->gap_pairing_state = GAP_PAIRING_STATE_IDLE;
                 memset(pin_code, 0, 16);
                 memcpy(pin_code, hci_stack->gap_pairing_input.gap_pairing_pin, hci_stack->gap_pairing_pin_len);
-                hci_send_cmd(&hci_pin_code_request_reply, hci_stack->gap_pairing_addr, hci_stack->gap_pairing_pin_len, pin_code);
+                hci_cmd_send(&hci_pin_code_request_reply, hci_stack->gap_pairing_addr, hci_stack->gap_pairing_pin_len, pin_code);
                 break;
             case GAP_PAIRING_STATE_SEND_PIN_NEGATIVE:
                 hci_stack->gap_pairing_state = GAP_PAIRING_STATE_WAIT_FOR_COMMAND_COMPLETE;
-                hci_send_cmd(&hci_pin_code_request_negative_reply, hci_stack->gap_pairing_addr);
+                hci_cmd_send(&hci_pin_code_request_negative_reply, hci_stack->gap_pairing_addr);
                 break;
             case GAP_PAIRING_STATE_SEND_PASSKEY:
                 hci_stack->gap_pairing_state = GAP_PAIRING_STATE_IDLE;
-                hci_send_cmd(&hci_user_passkey_request_reply, hci_stack->gap_pairing_addr, hci_stack->gap_pairing_input.gap_pairing_passkey);
+                hci_cmd_send(&hci_user_passkey_request_reply, hci_stack->gap_pairing_addr, hci_stack->gap_pairing_input.gap_pairing_passkey);
                 break;
             case GAP_PAIRING_STATE_SEND_PASSKEY_NEGATIVE:
                 hci_stack->gap_pairing_state = GAP_PAIRING_STATE_WAIT_FOR_COMMAND_COMPLETE;
-                hci_send_cmd(&hci_user_passkey_request_negative_reply, hci_stack->gap_pairing_addr);
+                hci_cmd_send(&hci_user_passkey_request_negative_reply, hci_stack->gap_pairing_addr);
                 break;
             case GAP_PAIRING_STATE_SEND_CONFIRMATION:
                 hci_stack->gap_pairing_state = GAP_PAIRING_STATE_IDLE;
-                hci_send_cmd(&hci_user_confirmation_request_reply, hci_stack->gap_pairing_addr);
+                hci_cmd_send(&hci_user_confirmation_request_reply, hci_stack->gap_pairing_addr);
                 break;
             case GAP_PAIRING_STATE_SEND_CONFIRMATION_NEGATIVE:
                 hci_stack->gap_pairing_state = GAP_PAIRING_STATE_WAIT_FOR_COMMAND_COMPLETE;
-                hci_send_cmd(&hci_user_confirmation_request_negative_reply, hci_stack->gap_pairing_addr);
+                hci_cmd_send(&hci_user_confirmation_request_negative_reply, hci_stack->gap_pairing_addr);
                 break;
             default:
                 break;
@@ -6066,11 +6069,11 @@ static uint8_t hci_le_num_phys(uint8_t phys){
 static void hci_le_scan_stop(void){
 #ifdef ENABLE_LE_EXTENDED_ADVERTISING
     if (hci_le_extended_advertising_supported()) {
-            hci_send_cmd(&hci_le_set_extended_scan_enable, 0, 0, 0, 0);
+            hci_cmd_send(&hci_le_set_extended_scan_enable, 0, 0, 0, 0);
     } else
 #endif
     {
-        hci_send_cmd(&hci_le_set_scan_enable, 0, 0);
+        hci_cmd_send(&hci_le_set_scan_enable, 0, 0);
     }
 }
 
@@ -6100,7 +6103,7 @@ hci_send_le_create_connection(uint8_t initiator_filter_policy, bd_addr_type_t ad
             le_minimum_ce_length[i]        = hci_stack->le_minimum_ce_length;
             le_maximum_ce_length[i]        = hci_stack->le_maximum_ce_length;
         }
-        hci_send_cmd(&hci_le_extended_create_connection,
+        hci_cmd_send(&hci_le_extended_create_connection,
                      initiator_filter_policy,
                      hci_stack->le_connection_own_addr_type,   // our addr type:
                      address_type,                  // peer address type
@@ -6118,7 +6121,7 @@ hci_send_le_create_connection(uint8_t initiator_filter_policy, bd_addr_type_t ad
     } else
 #endif
     {
-        hci_send_cmd(&hci_le_create_connection,
+        hci_cmd_send(&hci_le_create_connection,
                      hci_stack->le_connection_scan_interval,  // conn scan interval
                      hci_stack->le_connection_scan_window,    // conn scan windows
                      initiator_filter_policy,                 // don't use whitelist
@@ -6182,13 +6185,13 @@ static bool hci_whitelist_modification_process(void){
                 btstack_linked_list_remove(&hci_stack->le_whitelist, (btstack_linked_item_t *) entry);
                 btstack_memory_whitelist_entry_free(entry);
             }
-            hci_send_cmd(&hci_le_remove_device_from_white_list, address_type, address);
+            hci_cmd_send(&hci_le_remove_device_from_white_list, address_type, address);
             return true;
         }
         if (entry->state & LE_WHITELIST_ADD_TO_CONTROLLER){
             entry->state &= ~LE_WHITELIST_ADD_TO_CONTROLLER;
             entry->state |= LE_WHITELIST_ON_CONTROLLER;
-            hci_send_cmd(&hci_le_add_device_to_white_list, entry->address_type, entry->address);
+            hci_cmd_send(&hci_le_add_device_to_white_list, entry->address_type, entry->address);
             return true;
         }
     }
@@ -6205,7 +6208,7 @@ static bool hci_run_general_gap_le(void){
     if (hci_stack->le_resolvable_private_address_update_s > 0){
         uint16_t update_s = hci_stack->le_resolvable_private_address_update_s;
         hci_stack->le_resolvable_private_address_update_s = 0;
-        hci_send_cmd(&hci_le_set_resolvable_private_address_timeout, update_s);
+        hci_cmd_send(&hci_le_set_resolvable_private_address_timeout, update_s);
         return true;
     }
 #endif
@@ -6417,7 +6420,7 @@ static bool hci_run_general_gap_le(void){
     // 2.1 Outgoing connection
 #ifdef ENABLE_LE_CENTRAL
     if (connecting_stop){
-        hci_send_cmd(&hci_le_create_connection_cancel);
+        hci_cmd_send(&hci_le_create_connection_cancel);
         return true;
     }
 #endif
@@ -6435,13 +6438,13 @@ static bool hci_run_general_gap_le(void){
     if (hci_stack->le_periodic_terminate_sync_handle != HCI_CON_HANDLE_INVALID){
         uint16_t sync_handle = hci_stack->le_periodic_terminate_sync_handle;
         hci_stack->le_periodic_terminate_sync_handle = HCI_CON_HANDLE_INVALID;
-        hci_send_cmd(&hci_le_periodic_advertising_terminate_sync, sync_handle);
+        hci_cmd_send(&hci_le_periodic_advertising_terminate_sync, sync_handle);
         return true;
     }
 #ifdef ENABLE_LE_PERIODIC_ADVERTISING
     if (periodic_sync_stop){
         hci_stack->le_periodic_sync_state = LE_CONNECTING_CANCEL;
-        hci_send_cmd(&hci_le_periodic_advertising_create_sync_cancel);
+        hci_cmd_send(&hci_le_periodic_advertising_create_sync_cancel);
         return true;
     }
 #endif /* ENABLE_LE_PERIODIC_ADVERTISING */
@@ -6464,12 +6467,12 @@ static bool hci_run_general_gap_le(void){
             const uint8_t advertising_handles[] = { advertising_stop_handle };
             const uint16_t durations[] = { 0 };
             const uint16_t max_events[] = { 0 };
-            hci_send_cmd(&hci_le_set_extended_advertising_enable, 0, 1, advertising_handles, durations, max_events);
+            hci_cmd_send(&hci_le_set_extended_advertising_enable, 0, 1, advertising_handles, durations, max_events);
         } else
 #endif
         {
             hci_stack->le_advertisements_state &= ~LE_ADVERTISEMENT_STATE_ACTIVE;
-            hci_send_cmd(&hci_le_set_advertise_enable, 0);
+            hci_cmd_send(&hci_le_set_advertise_enable, 0);
         }
         return true;
     }
@@ -6477,7 +6480,7 @@ static bool hci_run_general_gap_le(void){
 #ifdef ENABLE_LE_PERIODIC_ADVERTISING
     if (periodic_advertising_stop){
         advertising_stop_set->state &= ~LE_ADVERTISEMENT_STATE_PERIODIC_ACTIVE;
-        hci_send_cmd(&hci_le_set_periodic_advertising_enable, 0, advertising_stop_set->advertising_handle);
+        hci_cmd_send(&hci_le_set_periodic_advertising_enable, 0, advertising_stop_set->advertising_handle);
         return true;
     }
 #endif /* ENABLE_LE_PERIODIC_ADVERTISING */
@@ -6505,7 +6508,7 @@ static bool hci_run_general_gap_le(void){
 
     if (hci_stack->le_advertisements_todo & LE_ADVERTISEMENT_TASKS_SET_ADDRESS){
         hci_stack->le_advertisements_todo &= ~LE_ADVERTISEMENT_TASKS_SET_ADDRESS;
-        hci_send_cmd(&hci_le_set_random_address, hci_stack->le_random_address);
+        hci_cmd_send(&hci_le_set_random_address, hci_stack->le_random_address);
 #ifdef ENABLE_LE_SET_ADV_PARAMS_ON_RANDOM_ADDRESS_CHANGE
         // workaround: on some Controllers, address in advertisements is updated only after next dv params set
         hci_stack->le_advertisements_todo |= LE_ADVERTISEMENT_TASKS_SET_PARAMS;
@@ -6530,12 +6533,12 @@ static bool hci_run_general_gap_le(void){
                 scan_intervals[i] = hci_stack->le_scan_interval;
                 scan_windows[i]   = hci_stack->le_scan_window;
             }
-            hci_send_cmd(&hci_le_set_extended_scan_parameters, hci_stack->le_own_addr_type,
+            hci_cmd_send(&hci_le_set_extended_scan_parameters, hci_stack->le_own_addr_type,
                          hci_stack->le_scan_filter_policy, hci_stack->le_scan_phys, scan_types, scan_intervals, scan_windows);
         } else
 #endif
         {
-            hci_send_cmd(&hci_le_set_scan_parameters, hci_stack->le_scan_type, hci_stack->le_scan_interval, hci_stack->le_scan_window,
+            hci_cmd_send(&hci_le_set_scan_parameters, hci_stack->le_scan_type, hci_stack->le_scan_interval, hci_stack->le_scan_window,
                          hci_stack->le_own_addr_type, hci_stack->le_scan_filter_policy);
         }
         return true;
@@ -6556,7 +6559,7 @@ static bool hci_run_general_gap_le(void){
                 adv_event_properties = mapping[hci_stack->le_advertisements_type];
             }
             hci_stack->le_advertising_set_in_current_command = 0;
-            hci_send_cmd(&hci_le_set_extended_advertising_parameters,
+            hci_cmd_send(&hci_le_set_extended_advertising_parameters,
                          0,
                          adv_event_properties,
                          hci_stack->le_advertisements_interval_min,
@@ -6576,7 +6579,7 @@ static bool hci_run_general_gap_le(void){
         } else
 #endif
         {
-            hci_send_cmd(&hci_le_set_advertising_parameters,
+            hci_cmd_send(&hci_le_set_advertising_parameters,
                          hci_stack->le_advertisements_interval_min,
                          hci_stack->le_advertisements_interval_max,
                          hci_stack->le_advertisements_type,
@@ -6593,7 +6596,7 @@ static bool hci_run_general_gap_le(void){
     // assumption: only set if extended advertising is supported
     if ((hci_stack->le_advertisements_todo & LE_ADVERTISEMENT_TASKS_SET_ADDRESS_SET_0) != 0){
         hci_stack->le_advertisements_todo &= ~LE_ADVERTISEMENT_TASKS_SET_ADDRESS_SET_0;
-        hci_send_cmd(&hci_le_set_advertising_set_random_address, 0, hci_stack->le_random_address);
+        hci_cmd_send(&hci_le_set_advertising_set_random_address, 0, hci_stack->le_random_address);
         return true;
     }
 #endif
@@ -6608,11 +6611,11 @@ static bool hci_run_general_gap_le(void){
 #ifdef ENABLE_LE_EXTENDED_ADVERTISING
         if (hci_le_extended_advertising_supported()){
             hci_stack->le_advertising_set_in_current_command = 0;
-            hci_send_cmd(&hci_le_set_extended_advertising_data, 0, 0x03, 0x01, hci_stack->le_advertisements_data_len, adv_data_clean);
+            hci_cmd_send(&hci_le_set_extended_advertising_data, 0, 0x03, 0x01, hci_stack->le_advertisements_data_len, adv_data_clean);
         } else
 #endif
         {
-            hci_send_cmd(&hci_le_set_advertising_data, hci_stack->le_advertisements_data_len, adv_data_clean);
+            hci_cmd_send(&hci_le_set_advertising_data, hci_stack->le_advertisements_data_len, adv_data_clean);
         }
         return true;
     }
@@ -6627,11 +6630,11 @@ static bool hci_run_general_gap_le(void){
 #ifdef ENABLE_LE_EXTENDED_ADVERTISING
         if (hci_le_extended_advertising_supported()){
             hci_stack->le_advertising_set_in_current_command = 0;
-            hci_send_cmd(&hci_le_set_extended_scan_response_data, 0, 0x03, 0x01, hci_stack->le_scan_response_data_len, scan_data_clean);
+            hci_cmd_send(&hci_le_set_extended_scan_response_data, 0, 0x03, 0x01, hci_stack->le_scan_response_data_len, scan_data_clean);
         } else
 #endif
         {
-            hci_send_cmd(&hci_le_set_scan_response_data, hci_stack->le_scan_response_data_len, scan_data_clean);
+            hci_cmd_send(&hci_le_set_scan_response_data, hci_stack->le_scan_response_data_len, scan_data_clean);
         }
         return true;
     }
@@ -6645,13 +6648,13 @@ static bool hci_run_general_gap_le(void){
             if ((advertising_set->tasks & LE_ADVERTISEMENT_TASKS_REMOVE_SET) != 0) {
                 advertising_set->tasks &= ~LE_ADVERTISEMENT_TASKS_REMOVE_SET;
                 hci_stack->le_advertising_set_in_current_command = advertising_set->advertising_handle;
-                hci_send_cmd(&hci_le_remove_advertising_set, advertising_set->advertising_handle);
+                hci_cmd_send(&hci_le_remove_advertising_set, advertising_set->advertising_handle);
                 return true;
             }
             if ((advertising_set->tasks & LE_ADVERTISEMENT_TASKS_SET_PARAMS) != 0){
                 advertising_set->tasks &= ~LE_ADVERTISEMENT_TASKS_SET_PARAMS;
                 hci_stack->le_advertising_set_in_current_command = advertising_set->advertising_handle;
-                hci_send_cmd(&hci_le_set_extended_advertising_parameters,
+                hci_cmd_send(&hci_le_set_extended_advertising_parameters,
                              advertising_set->advertising_handle,
                              advertising_set->extended_params.advertising_event_properties,
                              advertising_set->extended_params.primary_advertising_interval_min,
@@ -6672,7 +6675,7 @@ static bool hci_run_general_gap_le(void){
             }
             if ((advertising_set->tasks & LE_ADVERTISEMENT_TASKS_SET_ADDRESS) != 0){
                 advertising_set->tasks &= ~LE_ADVERTISEMENT_TASKS_SET_ADDRESS;
-                hci_send_cmd(&hci_le_set_advertising_set_random_address, advertising_set->advertising_handle, advertising_set->random_address);
+                hci_cmd_send(&hci_le_set_advertising_set_random_address, advertising_set->advertising_handle, advertising_set->random_address);
                 return true;
             }
             if ((advertising_set->tasks & LE_ADVERTISEMENT_TASKS_SET_ADV_DATA) != 0) {
@@ -6688,7 +6691,7 @@ static bool hci_run_general_gap_le(void){
                     advertising_set->adv_data_pos += data_to_upload;
                 }
                 hci_stack->le_advertising_set_in_current_command = advertising_set->advertising_handle;
-                hci_send_cmd(&hci_le_set_extended_advertising_data, advertising_set->advertising_handle, operation, 0x01, data_to_upload, &advertising_set->adv_data[pos]);
+                hci_cmd_send(&hci_le_set_extended_advertising_data, advertising_set->advertising_handle, operation, 0x01, data_to_upload, &advertising_set->adv_data[pos]);
                 return true;
             }
             if ((advertising_set->tasks & LE_ADVERTISEMENT_TASKS_SET_SCAN_DATA) != 0) {
@@ -6702,14 +6705,14 @@ static bool hci_run_general_gap_le(void){
                     advertising_set->scan_data_pos += data_to_upload;
                 }
                 hci_stack->le_advertising_set_in_current_command = advertising_set->advertising_handle;
-                hci_send_cmd(&hci_le_set_extended_scan_response_data, advertising_set->advertising_handle, operation, 0x01, data_to_upload, &advertising_set->scan_data[pos]);
+                hci_cmd_send(&hci_le_set_extended_scan_response_data, advertising_set->advertising_handle, operation, 0x01, data_to_upload, &advertising_set->scan_data[pos]);
                 return true;
             }
 #ifdef ENABLE_LE_PERIODIC_ADVERTISING
             if ((advertising_set->tasks & LE_ADVERTISEMENT_TASKS_SET_PERIODIC_PARAMS) != 0){
                 advertising_set->tasks &= ~LE_ADVERTISEMENT_TASKS_SET_PERIODIC_PARAMS;
                 hci_stack->le_advertising_set_in_current_command = advertising_set->advertising_handle;
-                hci_send_cmd(&hci_le_set_periodic_advertising_parameters,
+                hci_cmd_send(&hci_le_set_periodic_advertising_parameters,
                              advertising_set->advertising_handle,
                              advertising_set->periodic_params.periodic_advertising_interval_min,
                              advertising_set->periodic_params.periodic_advertising_interval_max,
@@ -6729,7 +6732,7 @@ static bool hci_run_general_gap_le(void){
                     advertising_set->periodic_data_pos += data_to_upload;
                 }
                 hci_stack->le_advertising_set_in_current_command = advertising_set->advertising_handle;
-                hci_send_cmd(&hci_le_set_periodic_advertising_data, advertising_set->advertising_handle, operation, data_to_upload, &advertising_set->periodic_data[pos]);
+                hci_cmd_send(&hci_le_set_periodic_advertising_data, advertising_set->advertising_handle, operation, data_to_upload, &advertising_set->periodic_data[pos]);
                 return true;
             }
 #endif /* ENABLE_LE_PERIODIC_ADVERTISING */
@@ -6764,11 +6767,11 @@ static bool hci_run_general_gap_le(void){
 		switch (hci_stack->le_resolving_list_state) {
 			case LE_RESOLVING_LIST_SEND_ENABLE_ADDRESS_RESOLUTION:
 				hci_stack->le_resolving_list_state = LE_RESOLVING_LIST_READ_SIZE;
-				hci_send_cmd(&hci_le_set_address_resolution_enabled, 1);
+				hci_cmd_send(&hci_le_set_address_resolution_enabled, 1);
 				return true;
 			case LE_RESOLVING_LIST_READ_SIZE:
 				hci_stack->le_resolving_list_state = LE_RESOLVING_LIST_SEND_CLEAR;
-				hci_send_cmd(&hci_le_read_resolving_list_size);
+				hci_cmd_send(&hci_le_read_resolving_list_size);
 				return true;
 			case LE_RESOLVING_LIST_SEND_CLEAR:
 				hci_stack->le_resolving_list_state = LE_RESOLVING_LIST_SET_IRK;
@@ -6778,7 +6781,7 @@ static bool hci_run_general_gap_le(void){
                               sizeof(hci_stack->le_resolving_list_set_privacy_mode));
 				(void) memset(hci_stack->le_resolving_list_remove_entries, 0,
 							  sizeof(hci_stack->le_resolving_list_remove_entries));
-				hci_send_cmd(&hci_le_clear_resolving_list);
+				hci_cmd_send(&hci_le_clear_resolving_list);
 				return true;
             case LE_RESOLVING_LIST_SET_IRK:
                 // set IRK used by RPA for undirected advertising
@@ -6786,7 +6789,7 @@ static bool hci_run_general_gap_le(void){
                 local_irk = gap_get_persistent_irk();
                 reverse_128(local_irk, local_irk_flipped);
                 memset(null_16, 0, sizeof(null_16));
-                hci_send_cmd(&hci_le_add_device_to_resolving_list, BD_ADDR_TYPE_LE_PUBLIC, null_16,
+                hci_cmd_send(&hci_le_add_device_to_resolving_list, BD_ADDR_TYPE_LE_PUBLIC, null_16,
                              null_16, local_irk_flipped);
                 return true;
 			case LE_RESOLVING_LIST_UPDATES_ENTRIES:
@@ -6814,7 +6817,7 @@ static bool hci_run_general_gap_le(void){
 					}
 #endif
 
-					hci_send_cmd(&hci_le_remove_device_from_resolving_list, peer_identity_addr_type,
+					hci_cmd_send(&hci_le_remove_device_from_resolving_list, peer_identity_addr_type,
 								 peer_identity_addreses);
 					return true;
 				}
@@ -6836,7 +6839,7 @@ static bool hci_run_general_gap_le(void){
 					uint8_t peer_irk_flipped[16];
 					reverse_128(local_irk, local_irk_flipped);
 					reverse_128(peer_irk, peer_irk_flipped);
-					hci_send_cmd(&hci_le_add_device_to_resolving_list, peer_identity_addr_type, peer_identity_addreses,
+					hci_cmd_send(&hci_le_add_device_to_resolving_list, peer_identity_addr_type, peer_identity_addreses,
 								 peer_irk_flipped, local_irk_flipped);
 					return true;
 				}
@@ -6860,7 +6863,7 @@ static bool hci_run_general_gap_le(void){
                     // command uses format specifier 'P' that stores 16-byte value without flip
                     uint8_t peer_irk_flipped[16];
                     reverse_128(peer_irk, peer_irk_flipped);
-                    hci_send_cmd(&hci_le_set_privacy_mode, peer_identity_addr_type, peer_identity_address, hci_stack->le_privacy_mode);
+                    hci_cmd_send(&hci_le_set_privacy_mode, peer_identity_addr_type, peer_identity_address, hci_stack->le_privacy_mode);
                     return true;
                 }
 				break;
@@ -6882,13 +6885,13 @@ static bool hci_run_general_gap_le(void){
             periodic_advertiser_list_entry_t * entry = (periodic_advertiser_list_entry_t*) btstack_linked_list_iterator_next(&lit);
             if (entry->state & LE_PERIODIC_ADVERTISER_LIST_ENTRY_REMOVE_FROM_CONTROLLER){
                 entry->state &= ~LE_PERIODIC_ADVERTISER_LIST_ENTRY_REMOVE_FROM_CONTROLLER;
-                hci_send_cmd(&hci_le_remove_device_from_periodic_advertiser_list, entry->address_type, entry->address, entry->sid);
+                hci_cmd_send(&hci_le_remove_device_from_periodic_advertiser_list, entry->address_type, entry->address, entry->sid);
                 return true;
             }
             if (entry->state & LE_PERIODIC_ADVERTISER_LIST_ENTRY_ADD_TO_CONTROLLER){
                 entry->state &= ~LE_PERIODIC_ADVERTISER_LIST_ENTRY_ADD_TO_CONTROLLER;
                 entry->state |= LE_PERIODIC_ADVERTISER_LIST_ENTRY_ON_CONTROLLER;
-                hci_send_cmd(&hci_le_add_device_to_periodic_advertiser_list, entry->address_type, entry->address, entry->sid);
+                hci_cmd_send(&hci_le_add_device_to_periodic_advertiser_list, entry->address_type, entry->address, entry->sid);
                 return true;
             }
             if ((entry->state & LE_PERIODIC_ADVERTISER_LIST_ENTRY_ON_CONTROLLER) == 0){
@@ -6905,7 +6908,7 @@ static bool hci_run_general_gap_le(void){
 #ifdef ENABLE_LE_PERIODIC_ADVERTISING
     if (hci_stack->le_past_set_default_params){
         hci_stack->le_past_set_default_params = false;
-        hci_send_cmd(&hci_le_set_default_periodic_advertising_sync_transfer_parameters,
+        hci_cmd_send(&hci_le_set_default_periodic_advertising_sync_transfer_parameters,
                      hci_stack->le_past_mode,
                      hci_stack->le_past_skip,
                      hci_stack->le_past_sync_timeout,
@@ -6930,11 +6933,11 @@ static bool hci_run_general_gap_le(void){
         hci_stack->le_scanning_active = true;
 #ifdef ENABLE_LE_EXTENDED_ADVERTISING
         if (hci_le_extended_advertising_supported()){
-            hci_send_cmd(&hci_le_set_extended_scan_enable, 1, hci_stack->le_scan_filter_duplicates, 0, 0);
+            hci_cmd_send(&hci_le_set_extended_scan_enable, 1, hci_stack->le_scan_filter_duplicates, 0, 0);
         } else
 #endif
         {
-            hci_send_cmd(&hci_le_set_scan_enable, 1, hci_stack->le_scan_filter_duplicates);
+            hci_cmd_send(&hci_le_set_scan_enable, 1, hci_stack->le_scan_filter_duplicates);
         }
         return true;
     }
@@ -6956,7 +6959,7 @@ static bool hci_run_general_gap_le(void){
             case LE_CONNECTING_DIRECT:
             case LE_CONNECTING_WHITELIST:
                 hci_stack->le_periodic_sync_state = ((hci_stack->le_periodic_sync_options & 1) != 0) ? LE_CONNECTING_WHITELIST : LE_CONNECTING_DIRECT;
-                hci_send_cmd(&hci_le_periodic_advertising_create_sync,
+                hci_cmd_send(&hci_le_periodic_advertising_create_sync,
                              hci_stack->le_periodic_sync_options,
                              hci_stack->le_periodic_sync_advertising_sid,
                              hci_stack->le_periodic_sync_advertiser_address_type,
@@ -6984,11 +6987,11 @@ static bool hci_run_general_gap_le(void){
             const uint8_t advertising_handles[] = { 0 };
             const uint16_t durations[] = { 0 };
             const uint16_t max_events[] = { 0 };
-            hci_send_cmd(&hci_le_set_extended_advertising_enable, 1, 1, advertising_handles, durations, max_events);
+            hci_cmd_send(&hci_le_set_extended_advertising_enable, 1, 1, advertising_handles, durations, max_events);
         } else
 #endif
         {
-            hci_send_cmd(&hci_le_set_advertise_enable, 1);
+            hci_cmd_send(&hci_le_set_advertise_enable, 1);
         }
         return true;
     }
@@ -7004,7 +7007,7 @@ static bool hci_run_general_gap_le(void){
                 const uint8_t advertising_handles[] = { advertising_set->advertising_handle };
                 const uint16_t durations[] = { advertising_set->enable_timeout };
                 const uint16_t max_events[] = { advertising_set->enable_max_scan_events };
-                hci_send_cmd(&hci_le_set_extended_advertising_enable, 1, 1, advertising_handles, durations, max_events);
+                hci_cmd_send(&hci_le_set_extended_advertising_enable, 1, 1, advertising_handles, durations, max_events);
                 return true;
             }
 #ifdef ENABLE_LE_PERIODIC_ADVERTISING
@@ -7014,7 +7017,7 @@ static bool hci_run_general_gap_le(void){
                 if (advertising_set->periodic_include_adi){
                     enable |= 2;
                 }
-                hci_send_cmd(&hci_le_set_periodic_advertising_enable, enable, advertising_set->advertising_handle);
+                hci_cmd_send(&hci_le_set_periodic_advertising_enable, enable, advertising_set->advertising_handle);
                 return true;
             }
 #endif /* ENABLE_LE_PERIODIC_ADVERTISING */
@@ -7043,7 +7046,7 @@ static bool hci_run_iso_tasks(void){
                 hci_stack->iso_active_operation_group_id = big->params->big_handle;
                 hci_stack->iso_active_operation_type = HCI_ISO_TYPE_BIS;
                 big->state = LE_AUDIO_BIG_STATE_W4_ESTABLISHED;
-                hci_send_cmd(&hci_le_create_big,
+                hci_cmd_send(&hci_le_create_big,
                              big->params->big_handle,
                              big->params->advertising_handle,
                              big->params->num_bis,
@@ -7059,15 +7062,15 @@ static bool hci_run_iso_tasks(void){
                 return true;
             case LE_AUDIO_BIG_STATE_SETUP_ISO_PATH:
                 big->state = LE_AUDIO_BIG_STATE_W4_SETUP_ISO_PATH;
-                hci_send_cmd(&hci_le_setup_iso_data_path, big->bis_con_handles[big->state_vars.next_bis], 0, 0, HCI_AUDIO_CODING_FORMAT_TRANSPARENT, 0, 0,  0, 0, NULL);
+                hci_cmd_send(&hci_le_setup_iso_data_path, big->bis_con_handles[big->state_vars.next_bis], 0, 0, HCI_AUDIO_CODING_FORMAT_TRANSPARENT, 0, 0,  0, 0, NULL);
                 return true;
             case LE_AUDIO_BIG_STATE_SETUP_ISO_PATHS_FAILED:
                 big->state = LE_AUDIO_BIG_STATE_W4_TERMINATED_AFTER_SETUP_FAILED;
-                hci_send_cmd(&hci_le_terminate_big, big->big_handle, big->state_vars.status);
+                hci_cmd_send(&hci_le_terminate_big, big->big_handle, big->state_vars.status);
                 return true;
             case LE_AUDIO_BIG_STATE_TERMINATE:
                 big->state = LE_AUDIO_BIG_STATE_W4_TERMINATED;
-                hci_send_cmd(&hci_le_terminate_big, big->big_handle, ERROR_CODE_REMOTE_USER_TERMINATED_CONNECTION);
+                hci_cmd_send(&hci_le_terminate_big, big->big_handle, ERROR_CODE_REMOTE_USER_TERMINATED_CONNECTION);
                 return true;
             default:
                 break;
@@ -7083,7 +7086,7 @@ static bool hci_run_iso_tasks(void){
                 hci_stack->iso_active_operation_group_id = big_sync->params->big_handle;
                 hci_stack->iso_active_operation_type = HCI_ISO_TYPE_BIS;
                 big_sync->state = LE_AUDIO_BIG_STATE_W4_ESTABLISHED;
-                hci_send_cmd(&hci_le_big_create_sync,
+                hci_cmd_send(&hci_le_big_create_sync,
                              big_sync->params->big_handle,
                              big_sync->params->sync_handle,
                              big_sync->params->encryption,
@@ -7095,15 +7098,15 @@ static bool hci_run_iso_tasks(void){
                 return true;
             case LE_AUDIO_BIG_STATE_SETUP_ISO_PATH:
                 big_sync->state = LE_AUDIO_BIG_STATE_W4_SETUP_ISO_PATH;
-                hci_send_cmd(&hci_le_setup_iso_data_path, big_sync->bis_con_handles[big_sync->state_vars.next_bis], 1, 0, HCI_AUDIO_CODING_FORMAT_TRANSPARENT, 0, 0, 0, 0, NULL);
+                hci_cmd_send(&hci_le_setup_iso_data_path, big_sync->bis_con_handles[big_sync->state_vars.next_bis], 1, 0, HCI_AUDIO_CODING_FORMAT_TRANSPARENT, 0, 0, 0, 0, NULL);
                 return true;
             case LE_AUDIO_BIG_STATE_SETUP_ISO_PATHS_FAILED:
                 big_sync->state = LE_AUDIO_BIG_STATE_W4_TERMINATED_AFTER_SETUP_FAILED;
-                hci_send_cmd(&hci_le_big_terminate_sync, big_sync->big_handle);
+                hci_cmd_send(&hci_le_big_terminate_sync, big_sync->big_handle);
                 return true;
             case LE_AUDIO_BIG_STATE_TERMINATE:
                 big_sync->state = LE_AUDIO_BIG_STATE_W4_TERMINATED;
-                hci_send_cmd(&hci_le_big_terminate_sync, big_sync->big_handle);
+                hci_cmd_send(&hci_le_big_terminate_sync, big_sync->big_handle);
                 return true;
             default:
                 break;
@@ -7140,7 +7143,7 @@ static bool hci_run_iso_tasks(void){
                     rtn_c_to_p[i]     = cis_params->rtn_c_to_p;
                     rtn_p_to_c[i]     = cis_params->rtn_p_to_c;
                 }
-                hci_send_cmd(&hci_le_set_cig_parameters,
+                hci_cmd_send(&hci_le_set_cig_parameters,
                              cig->cig_id,
                              params->sdu_interval_c_to_p,
                              params->sdu_interval_p_to_c,
@@ -7166,7 +7169,7 @@ static bool hci_run_iso_tasks(void){
                 for (i=0;i<cig->num_cis;i++){
                     cig->cis_setup_active[i] = true;
                 }
-                hci_send_cmd(&hci_le_create_cis, cig->num_cis, cig->cis_con_handles, cig->acl_con_handles);
+                hci_cmd_send(&hci_le_create_cis, cig->num_cis, cig->cis_con_handles, cig->acl_con_handles);
                 return true;
             case LE_AUDIO_CIG_STATE_SETUP_ISO_PATH:
                 for ( ; cig->state_vars.next_cis < (cig->num_cis * 2) ; cig->state_vars.next_cis++ ){
@@ -7190,7 +7193,7 @@ static bool hci_run_iso_tasks(void){
                         hci_stack->iso_active_operation_group_id = cig->params->cig_id;
                         hci_stack->iso_active_operation_type = HCI_ISO_TYPE_CIS;
                         cig->state = LE_AUDIO_CIG_STATE_W4_SETUP_ISO_PATH;
-                        hci_send_cmd(&hci_le_setup_iso_data_path, cig->cis_con_handles[cis_index], cis_direction, 0, HCI_AUDIO_CODING_FORMAT_TRANSPARENT, 0, 0, 0, 0, NULL);
+                        hci_cmd_send(&hci_le_setup_iso_data_path, cig->cis_con_handles[cis_index], cis_direction, 0, HCI_AUDIO_CODING_FORMAT_TRANSPARENT, 0, 0, 0, 0, NULL);
                         return true;
                     }
                 }
@@ -7210,7 +7213,7 @@ static bool hci_run_iso_tasks(void){
                 }
                 if (cig_active == false){
                     btstack_linked_list_iterator_remove(&it);
-                    hci_send_cmd(&hci_le_remove_cig, cig->cig_id);
+                    hci_cmd_send(&hci_le_remove_cig, cig->cig_id);
                     return true;
                 }
             default:
@@ -7228,30 +7231,30 @@ static bool hci_run_iso_tasks(void){
                 iso_stream->state = HCI_ISO_STREAM_STATE_W4_ESTABLISHED;
                 hci_stack->iso_active_operation_type = HCI_ISO_TYPE_CIS;
                 hci_stack->iso_active_operation_group_id = HCI_ISO_GROUP_ID_SINGLE_CIS;
-                hci_send_cmd(&hci_le_accept_cis_request, iso_stream->cis_handle);
+                hci_cmd_send(&hci_le_accept_cis_request, iso_stream->cis_handle);
                 return true;
             case HCI_ISO_STREAM_W2_REJECT:
                 con_handle = iso_stream->cis_handle;
                 hci_stack->iso_active_operation_type = HCI_ISO_TYPE_CIS;
                 hci_stack->iso_active_operation_group_id = HCI_ISO_GROUP_ID_SINGLE_CIS;
                 hci_iso_stream_finalize(iso_stream);
-                hci_send_cmd(&hci_le_reject_cis_request, con_handle, ERROR_CODE_REMOTE_DEVICE_TERMINATED_CONNECTION_DUE_TO_LOW_RESOURCES);
+                hci_cmd_send(&hci_le_reject_cis_request, con_handle, ERROR_CODE_REMOTE_DEVICE_TERMINATED_CONNECTION_DUE_TO_LOW_RESOURCES);
                 return true;
             case HCI_ISO_STREAM_STATE_W2_SETUP_ISO_INPUT:
                 hci_stack->iso_active_operation_group_id = HCI_ISO_GROUP_ID_SINGLE_CIS;
                 hci_stack->iso_active_operation_type = HCI_ISO_TYPE_CIS;
                 iso_stream->state = HCI_ISO_STREAM_STATE_W4_ISO_SETUP_INPUT;
-                hci_send_cmd(&hci_le_setup_iso_data_path, iso_stream->cis_handle, 0, 0, HCI_AUDIO_CODING_FORMAT_TRANSPARENT, 0, 0, 0, 0, NULL);
+                hci_cmd_send(&hci_le_setup_iso_data_path, iso_stream->cis_handle, 0, 0, HCI_AUDIO_CODING_FORMAT_TRANSPARENT, 0, 0, 0, 0, NULL);
                 return true;
             case HCI_ISO_STREAM_STATE_W2_SETUP_ISO_OUTPUT:
                 hci_stack->iso_active_operation_group_id = HCI_ISO_GROUP_ID_SINGLE_CIS;
                 hci_stack->iso_active_operation_type = HCI_ISO_TYPE_CIS;
                 iso_stream->state = HCI_ISO_STREAM_STATE_W4_ISO_SETUP_OUTPUT;
-                hci_send_cmd(&hci_le_setup_iso_data_path, iso_stream->cis_handle, 1, 0, HCI_AUDIO_CODING_FORMAT_TRANSPARENT, 0, 0, 0, 0, NULL);
+                hci_cmd_send(&hci_le_setup_iso_data_path, iso_stream->cis_handle, 1, 0, HCI_AUDIO_CODING_FORMAT_TRANSPARENT, 0, 0, 0, 0, NULL);
                 return true;
             case HCI_ISO_STREAM_STATE_W2_CLOSE:
                 iso_stream->state = HCI_ISO_STREAM_STATE_W4_DISCONNECTED;
-                hci_send_cmd(&hci_disconnect, iso_stream->cis_handle, ERROR_CODE_REMOTE_USER_TERMINATED_CONNECTION);
+                hci_cmd_send(&hci_disconnect, iso_stream->cis_handle, ERROR_CODE_REMOTE_USER_TERMINATED_CONNECTION);
                 return true;
             default:
                 break;
@@ -7274,7 +7277,7 @@ static bool hci_run_general_pending_commands(void){
 #ifdef ENABLE_CLASSIC
                     case BD_ADDR_TYPE_ACL:
                         log_info("sending hci_create_connection");
-                        hci_send_cmd(&hci_create_connection, connection->address, hci_usable_acl_packet_types(), 0, 0, 0, hci_stack->allow_role_switch);
+                        hci_cmd_send(&hci_create_connection, connection->address, hci_usable_acl_packet_types(), 0, 0, 0, hci_stack->allow_role_switch);
                         break;
 #endif
                     default:
@@ -7296,14 +7299,14 @@ static bool hci_run_general_pending_commands(void){
                 if (connection->address_type == BD_ADDR_TYPE_ACL){
                     log_info("sending hci_accept_connection_request");
                     connection->state = ACCEPTED_CONNECTION_REQUEST;
-                    hci_send_cmd(&hci_accept_connection_request, connection->address, hci_stack->master_slave_policy);
+                    hci_cmd_send(&hci_accept_connection_request, connection->address, hci_stack->master_slave_policy);
                     return true;
                 }
                 break;
 #endif
             case SEND_DISCONNECT:
                 connection->state = SENT_DISCONNECT;
-                hci_send_cmd(&hci_disconnect, connection->con_handle, ERROR_CODE_REMOTE_USER_TERMINATED_CONNECTION);
+                hci_cmd_send(&hci_disconnect, connection->con_handle, ERROR_CODE_REMOTE_USER_TERMINATED_CONNECTION);
                 return true;
 
             default:
@@ -7323,9 +7326,9 @@ static bool hci_run_general_pending_commands(void){
             bool have_link_key = connection->link_key_type != INVALID_LINK_KEY;
             bool security_level_sufficient = have_link_key && (gap_security_level_for_link_key_type(connection->link_key_type) >= connection->requested_security_level);
             if (have_link_key && security_level_sufficient){
-                hci_send_cmd(&hci_link_key_request_reply, connection->address, &connection->link_key);
+                hci_cmd_send(&hci_link_key_request_reply, connection->address, &connection->link_key);
             } else {
-                hci_send_cmd(&hci_link_key_request_negative_reply, connection->address);
+                hci_cmd_send(&hci_link_key_request_negative_reply, connection->address);
             }
             return true;
         }
@@ -7333,7 +7336,7 @@ static bool hci_run_general_pending_commands(void){
         if (connection->authentication_flags & AUTH_FLAG_DENY_PIN_CODE_REQUEST){
             log_info("denying to pin request");
             connectionClearAuthenticationFlags(connection, AUTH_FLAG_DENY_PIN_CODE_REQUEST);
-            hci_send_cmd(&hci_pin_code_request_negative_reply, connection->address);
+            hci_cmd_send(&hci_pin_code_request_negative_reply, connection->address);
             return true;
         }
 
@@ -7378,13 +7381,13 @@ static bool hci_run_general_pending_commands(void){
                 have_oob_data |= 2;
             }
 #endif
-            hci_send_cmd(&hci_io_capability_request_reply, &connection->address, hci_stack->ssp_io_capability, have_oob_data, connection->io_cap_request_auth_req);
+            hci_cmd_send(&hci_io_capability_request_reply, &connection->address, hci_stack->ssp_io_capability, have_oob_data, connection->io_cap_request_auth_req);
             return true;
         }
 
         if (connection->authentication_flags & AUTH_FLAG_SEND_IO_CAPABILITIES_NEGATIVE_REPLY) {
             connectionClearAuthenticationFlags(connection, AUTH_FLAG_SEND_IO_CAPABILITIES_NEGATIVE_REPLY);
-            hci_send_cmd(&hci_io_capability_request_negative_reply, &connection->address, ERROR_CODE_PAIRING_NOT_ALLOWED);
+            hci_cmd_send(&hci_io_capability_request_negative_reply, &connection->address, ERROR_CODE_PAIRING_NOT_ALLOWED);
             return true;
         }
 
@@ -7424,12 +7427,12 @@ static bool hci_run_general_pending_commands(void){
 
             // Reply
             if (c_256 != zero) {
-                hci_send_cmd(&hci_remote_oob_extended_data_request_reply, &connection->address, c_192, r_192, c_256, r_256);
+                hci_cmd_send(&hci_remote_oob_extended_data_request_reply, &connection->address, c_192, r_192, c_256, r_256);
             } else if (c_192 != zero){
-                hci_send_cmd(&hci_remote_oob_data_request_reply, &connection->address, c_192, r_192);
+                hci_cmd_send(&hci_remote_oob_data_request_reply, &connection->address, c_192, r_192);
             } else {
                 hci_stack->classic_oob_con_handle = connection->con_handle;
-                hci_send_cmd(&hci_remote_oob_data_request_negative_reply, &connection->address);
+                hci_cmd_send(&hci_remote_oob_data_request_negative_reply, &connection->address);
             }
             return true;
         }
@@ -7437,19 +7440,19 @@ static bool hci_run_general_pending_commands(void){
 
         if (connection->authentication_flags & AUTH_FLAG_SEND_USER_CONFIRM_REPLY){
             connectionClearAuthenticationFlags(connection, AUTH_FLAG_SEND_USER_CONFIRM_REPLY);
-            hci_send_cmd(&hci_user_confirmation_request_reply, &connection->address);
+            hci_cmd_send(&hci_user_confirmation_request_reply, &connection->address);
             return true;
         }
 
         if (connection->authentication_flags & AUTH_FLAG_SEND_USER_CONFIRM_NEGATIVE_REPLY){
             connectionClearAuthenticationFlags(connection, AUTH_FLAG_SEND_USER_CONFIRM_NEGATIVE_REPLY);
-            hci_send_cmd(&hci_user_confirmation_request_negative_reply, &connection->address);
+            hci_cmd_send(&hci_user_confirmation_request_negative_reply, &connection->address);
             return true;
         }
 
         if (connection->authentication_flags & AUTH_FLAG_SEND_USER_PASSKEY_REPLY){
             connectionClearAuthenticationFlags(connection, AUTH_FLAG_SEND_USER_PASSKEY_REPLY);
-            hci_send_cmd(&hci_user_passkey_request_reply, &connection->address, 000000);
+            hci_cmd_send(&hci_user_passkey_request_reply, &connection->address, 000000);
             return true;
         }
 
@@ -7457,44 +7460,44 @@ static bool hci_run_general_pending_commands(void){
             connection->bonding_flags &= ~BONDING_DISCONNECT_DEDICATED_DONE;
             connection->bonding_flags |= BONDING_EMIT_COMPLETE_ON_DISCONNECT;
             connection->state = SENT_DISCONNECT;
-            hci_send_cmd(&hci_disconnect, connection->con_handle, ERROR_CODE_REMOTE_USER_TERMINATED_CONNECTION);
+            hci_cmd_send(&hci_disconnect, connection->con_handle, ERROR_CODE_REMOTE_USER_TERMINATED_CONNECTION);
             return true;
         }
 
         if ((connection->bonding_flags & BONDING_SEND_AUTHENTICATE_REQUEST) && ((connection->bonding_flags & BONDING_RECEIVED_REMOTE_FEATURES) != 0)){
             connection->bonding_flags &= ~BONDING_SEND_AUTHENTICATE_REQUEST;
             connection->bonding_flags |= BONDING_SENT_AUTHENTICATE_REQUEST;
-            hci_send_cmd(&hci_authentication_requested, connection->con_handle);
+            hci_cmd_send(&hci_authentication_requested, connection->con_handle);
             return true;
         }
 
         if (connection->bonding_flags & BONDING_SEND_ENCRYPTION_REQUEST){
             connection->bonding_flags &= ~BONDING_SEND_ENCRYPTION_REQUEST;
-            hci_send_cmd(&hci_set_connection_encryption, connection->con_handle, 1);
+            hci_cmd_send(&hci_set_connection_encryption, connection->con_handle, 1);
             return true;
         }
 
         if (connection->bonding_flags & BONDING_SEND_READ_ENCRYPTION_KEY_SIZE){
             connection->bonding_flags &= ~BONDING_SEND_READ_ENCRYPTION_KEY_SIZE;
-            hci_send_cmd(&hci_read_encryption_key_size, connection->con_handle, 1);
+            hci_cmd_send(&hci_read_encryption_key_size, connection->con_handle, 1);
             return true;
         }
 
         if (connection->bonding_flags & BONDING_REQUEST_REMOTE_FEATURES_PAGE_0){
             connection->bonding_flags &= ~BONDING_REQUEST_REMOTE_FEATURES_PAGE_0;
-            hci_send_cmd(&hci_read_remote_supported_features_command, connection->con_handle);
+            hci_cmd_send(&hci_read_remote_supported_features_command, connection->con_handle);
             return true;
         }
 
         if (connection->bonding_flags & BONDING_REQUEST_REMOTE_FEATURES_PAGE_1){
             connection->bonding_flags &= ~BONDING_REQUEST_REMOTE_FEATURES_PAGE_1;
-            hci_send_cmd(&hci_read_remote_extended_features_command, connection->con_handle, 1);
+            hci_cmd_send(&hci_read_remote_extended_features_command, connection->con_handle, 1);
             return true;
         }
 
         if (connection->bonding_flags & BONDING_REQUEST_REMOTE_FEATURES_PAGE_2){
             connection->bonding_flags &= ~BONDING_REQUEST_REMOTE_FEATURES_PAGE_2;
-            hci_send_cmd(&hci_read_remote_extended_features_command, connection->con_handle, 2);
+            hci_cmd_send(&hci_read_remote_extended_features_command, connection->con_handle, 2);
             return true;
         }
 #endif
@@ -7506,7 +7509,7 @@ static bool hci_run_general_pending_commands(void){
 #endif
             if (connection->state != SENT_DISCONNECT){
                 connection->state = SENT_DISCONNECT;
-                hci_send_cmd(&hci_disconnect, connection->con_handle, ERROR_CODE_AUTHENTICATION_FAILURE);
+                hci_cmd_send(&hci_disconnect, connection->con_handle, ERROR_CODE_AUTHENTICATION_FAILURE);
                 return true;
             }
         }
@@ -7518,33 +7521,33 @@ static bool hci_run_general_pending_commands(void){
                 break;
             case 0xffff:
                 connection->sniff_min_interval = 0;
-                hci_send_cmd(&hci_exit_sniff_mode, connection->con_handle);
+                hci_cmd_send(&hci_exit_sniff_mode, connection->con_handle);
                 return true;
             default:
                 sniff_min_interval = connection->sniff_min_interval;
                 connection->sniff_min_interval = 0;
-                hci_send_cmd(&hci_sniff_mode, connection->con_handle, connection->sniff_max_interval, sniff_min_interval, connection->sniff_attempt, connection->sniff_timeout);
+                hci_cmd_send(&hci_sniff_mode, connection->con_handle, connection->sniff_max_interval, sniff_min_interval, connection->sniff_attempt, connection->sniff_timeout);
                 return true;
         }
 
         if (connection->sniff_subrating_max_latency != 0xffff){
             uint16_t max_latency = connection->sniff_subrating_max_latency;
             connection->sniff_subrating_max_latency = 0;
-            hci_send_cmd(&hci_sniff_subrating, connection->con_handle, max_latency, connection->sniff_subrating_min_remote_timeout, connection->sniff_subrating_min_local_timeout);
+            hci_cmd_send(&hci_sniff_subrating, connection->con_handle, max_latency, connection->sniff_subrating_min_remote_timeout, connection->sniff_subrating_min_local_timeout);
             return true;
         }
 
         if (connection->qos_service_type != HCI_SERVICE_TYPE_INVALID){
             uint8_t service_type = (uint8_t) connection->qos_service_type;
             connection->qos_service_type = HCI_SERVICE_TYPE_INVALID;
-            hci_send_cmd(&hci_qos_setup, connection->con_handle, 0, service_type, connection->qos_token_rate, connection->qos_peak_bandwidth, connection->qos_latency, connection->qos_delay_variation);
+            hci_cmd_send(&hci_qos_setup, connection->con_handle, 0, service_type, connection->qos_token_rate, connection->qos_peak_bandwidth, connection->qos_latency, connection->qos_delay_variation);
             return true;
         }
 
         if (connection->request_role != HCI_ROLE_INVALID){
             hci_role_t role = connection->request_role;
             connection->request_role = HCI_ROLE_INVALID;
-            hci_send_cmd(&hci_switch_role_command, connection->address, role);
+            hci_cmd_send(&hci_switch_role_command, connection->address, role);
             return true;
         }
 #endif
@@ -7553,24 +7556,24 @@ static bool hci_run_general_pending_commands(void){
 #ifdef ENABLE_CLASSIC
             if ((connection->gap_connection_tasks & GAP_CONNECTION_TASK_WRITE_AUTOMATIC_FLUSH_TIMEOUT) != 0){
                 connection->gap_connection_tasks &= ~GAP_CONNECTION_TASK_WRITE_AUTOMATIC_FLUSH_TIMEOUT;
-                hci_send_cmd(&hci_write_automatic_flush_timeout, connection->con_handle, hci_stack->automatic_flush_timeout);
+                hci_cmd_send(&hci_write_automatic_flush_timeout, connection->con_handle, hci_stack->automatic_flush_timeout);
                 return true;
             }
             if (connection->gap_connection_tasks & GAP_CONNECTION_TASK_WRITE_SUPERVISION_TIMEOUT){
                 connection->gap_connection_tasks &= ~GAP_CONNECTION_TASK_WRITE_SUPERVISION_TIMEOUT;
-                hci_send_cmd(&hci_write_link_supervision_timeout, connection->con_handle, hci_stack->link_supervision_timeout);
+                hci_cmd_send(&hci_write_link_supervision_timeout, connection->con_handle, hci_stack->link_supervision_timeout);
                 return true;
             }
 #endif
             if (connection->gap_connection_tasks & GAP_CONNECTION_TASK_READ_RSSI){
                 connection->gap_connection_tasks &= ~GAP_CONNECTION_TASK_READ_RSSI;
-                hci_send_cmd(&hci_read_rssi, connection->con_handle);
+                hci_cmd_send(&hci_read_rssi, connection->con_handle);
                 return true;
             }
 #ifdef ENABLE_BLE
             if (connection->gap_connection_tasks & GAP_CONNECTION_TASK_LE_READ_REMOTE_FEATURES){
                 connection->gap_connection_tasks &= ~GAP_CONNECTION_TASK_LE_READ_REMOTE_FEATURES;
-                hci_send_cmd(&hci_le_read_remote_used_features, connection->con_handle);
+                hci_cmd_send(&hci_le_read_remote_used_features, connection->con_handle);
                 return true;
             }
 #endif
@@ -7581,19 +7584,19 @@ static bool hci_run_general_pending_commands(void){
             // response to L2CAP CON PARAMETER UPDATE REQUEST
             case CON_PARAMETER_UPDATE_CHANGE_HCI_CON_PARAMETERS:
                 connection->le_con_parameter_update_state = CON_PARAMETER_UPDATE_NONE;
-                hci_send_cmd(&hci_le_connection_update, connection->con_handle, connection->le_conn_interval_min,
+                hci_cmd_send(&hci_le_connection_update, connection->con_handle, connection->le_conn_interval_min,
                              connection->le_conn_interval_max, connection->le_conn_latency, connection->le_supervision_timeout,
                              hci_stack->le_minimum_ce_length, hci_stack->le_maximum_ce_length);
                 return true;
             case CON_PARAMETER_UPDATE_REPLY:
                 connection->le_con_parameter_update_state = CON_PARAMETER_UPDATE_NONE;
-                hci_send_cmd(&hci_le_remote_connection_parameter_request_reply, connection->con_handle, connection->le_conn_interval_min,
+                hci_cmd_send(&hci_le_remote_connection_parameter_request_reply, connection->con_handle, connection->le_conn_interval_min,
                              connection->le_conn_interval_max, connection->le_conn_latency, connection->le_supervision_timeout,
                              hci_stack->le_minimum_ce_length, hci_stack->le_maximum_ce_length);
                 return true;
             case CON_PARAMETER_UPDATE_NEGATIVE_REPLY:
                 connection->le_con_parameter_update_state = CON_PARAMETER_UPDATE_NONE;
-                hci_send_cmd(&hci_le_remote_connection_parameter_request_negative_reply, connection->con_handle,
+                hci_cmd_send(&hci_le_remote_connection_parameter_request_negative_reply, connection->con_handle,
                              ERROR_CODE_UNACCEPTABLE_CONNECTION_PARAMETERS);
                 return true;
             default:
@@ -7602,13 +7605,13 @@ static bool hci_run_general_pending_commands(void){
         if (connection->le_phy_update_all_phys != 0xffu){
             uint8_t all_phys = connection->le_phy_update_all_phys;
             connection->le_phy_update_all_phys = 0xff;
-            hci_send_cmd(&hci_le_set_phy, connection->con_handle, all_phys, connection->le_phy_update_tx_phys, connection->le_phy_update_rx_phys, connection->le_phy_update_phy_options);
+            hci_cmd_send(&hci_le_set_phy, connection->con_handle, all_phys, connection->le_phy_update_tx_phys, connection->le_phy_update_rx_phys, connection->le_phy_update_phy_options);
             return true;
         }
         if (connection->le_subrate_min > 0){
             uint16_t subrate_min = connection->le_subrate_min;
             connection->le_subrate_min = 0;
-            hci_send_cmd(&hci_le_subrate_request, connection->con_handle, subrate_min, connection->le_subrate_max, connection->le_subrate_max_latency,
+            hci_cmd_send(&hci_le_subrate_request, connection->con_handle, subrate_min, connection->le_subrate_max, connection->le_subrate_max_latency,
                              connection->le_subrate_continuation_number, connection->le_supervision_timeout);
             return true;
         }
@@ -7616,13 +7619,13 @@ static bool hci_run_general_pending_commands(void){
         if (connection->le_past_sync_handle != HCI_CON_HANDLE_INVALID){
             hci_con_handle_t sync_handle = connection->le_past_sync_handle;
             connection->le_past_sync_handle = HCI_CON_HANDLE_INVALID;
-            hci_send_cmd(&hci_le_periodic_advertising_sync_transfer, connection->con_handle, connection->le_past_service_data, sync_handle);
+            hci_cmd_send(&hci_le_periodic_advertising_sync_transfer, connection->con_handle, connection->le_past_service_data, sync_handle);
             return true;
         }
         if (connection->le_past_advertising_handle != 0xff){
             uint8_t advertising_handle = connection->le_past_advertising_handle;
             connection->le_past_advertising_handle = 0xff;
-            hci_send_cmd(&hci_le_periodic_advertising_set_info_transfer, connection->con_handle, connection->le_past_service_data, advertising_handle);
+            hci_cmd_send(&hci_le_periodic_advertising_set_info_transfer, connection->con_handle, connection->le_past_service_data, advertising_handle);
             return true;
         }
 #endif
@@ -7721,6 +7724,7 @@ static uint8_t hci_send_prepared_cmd_packet(void) {
     uint16_t size = 3u + hci_stack->hci_packet_buffer[2u];
     // send packet
     uint8_t status = hci_send_cmd_packet(hci_stack->hci_packet_buffer, size);
+    log_error("dgh send xxxxxxxxxxxxx2222222");
     // release packet buffer on error or for synchronous transport implementations
     if ((status != ERROR_CODE_SUCCESS) || hci_transport_synchronous()){
         hci_release_packet_buffer();
@@ -7992,10 +7996,10 @@ bool gap_secure_connections_active(void){
 
 #endif
 
-// va_list part of hci_send_cmd
+// va_list part of hci_cmd_send
 uint8_t hci_send_cmd_va_arg(const hci_cmd_t * cmd, va_list argptr){
     if (!hci_can_send_command_packet_now()){
-        log_error("hci_send_cmd called but cannot send packet now");
+        log_error("hci_cmd_send called but cannot send packet now");
         return ERROR_CODE_COMMAND_DISALLOWED;
     }
 
@@ -8007,13 +8011,15 @@ uint8_t hci_send_cmd_va_arg(const hci_cmd_t * cmd, va_list argptr){
 /**
  * pre: num_commands >= 0 - it's allowed to send a command to the controller
  */
-//uint8_t hci_send_cmd(const hci_cmd_t * cmd, ...){
-//    va_list argptr;
-//    va_start(argptr, cmd);
-//    uint8_t status = hci_send_cmd_va_arg(cmd, argptr);
-//    va_end(argptr);
-//    return status;
-//}
+uint8_t hci_cmd_send(const hci_cmd_t * cmd, ...){
+   log_error("dgh send xxxxxxxxxxxxx");
+   va_list argptr;
+   va_start(argptr, cmd);
+   uint8_t status = hci_send_cmd_va_arg(cmd, argptr);
+   va_end(argptr);
+   log_error("dgh send xxxxxxxxxxxxx1111");
+   return status;
+}
 
 // Forward HCI events and create non-HCI events
 
