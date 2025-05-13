@@ -84,30 +84,8 @@ int hci_packet_handler(u8 type, u8 *packet, u16 size)
 
     xSemaphoreGive(ring_buffer_mutex);
     btstack_run_loop_execute_on_main_thread(&packet_receive_callback_context);
-//   switch (type) {
-//   case HCI_EVENT_PACKET: {
-//       struct hci_event *p;
-//       p = lbuf_alloc(__this->pEVT, sizeof(struct hci_event) + size);
-//       p->length = size;
-//       memcpy(p->payload, packet, size);
-//       lbuf_push(p, 1);
-//   }
-//   err = os_taskq_post_type(THIS_TASK_NAME, BTSTACK_HCI_EVENT, 0, NULL);
-//   break;
-//   case HCI_ACL_DATA_PACKET:
-//       msg[0] = (int)packet;
-//       msg[1] = size;
-//       err = os_taskq_post_type(THIS_TASK_NAME, BTSTACK_HCI_ACL, 2, msg);
-//       break;
-//   default:
-//       return 0;
-//   }
 
-//   if (err != OS_NO_ERR) {
-//       log_error("OS_ERR : 0x%x", err);
-//   }
-
-   return err;
+    return err;
 }
 
 static void transport_deliver_packets(void *context){
@@ -314,10 +292,41 @@ int btstack_demo_init()
    return 0;
 }
 
+#if 0  ////测试hci send cmd 接口 整个流程
+const static u8 eir_data[] = {
+    0x05, 0x03, 0x24, 0x11, 0x00, 0x12,
+    0x0d, 0x09, 'J', 'o', 'y', '-', 'C', 'o', 'n', ' ', '(', 'R', ')', 0,
+    0x09, 0x10, 0x02, 0x00, 0x7c, 0x05, 0x09, 0x20, 0x00, 0x01, 0x00,
+};
+#endif
+
 void bt_task_handle(void *arg)
 {
+    u32 sys_clk =  clk_get("sys");
+    bt_pll_para(24000000, sys_clk, 0, 0);
     btstack_demo_init();
-    //hci_send_cmd(&hci_reset);   //测试hci send cmd 接口
+#if 0
+    hci_send_cmd(&hci_reset);   //测试hci send cmd 接口 整个流程
+    os_time_dly(100);
+    hci_send_cmd(&hci_read_bd_addr);
+    os_time_dly(100);
+    hci_send_cmd(&hci_read_buffer_size);
+    os_time_dly(100);
+    hci_send_cmd(&hci_read_local_version_information);
+    os_time_dly(100);
+    hci_send_cmd(&hci_read_local_name);
+    os_time_dly(100);
+    hci_send_cmd(&hci_set_event_mask, 0xffffffff, 0x3FFFFFFF);
+    os_time_dly(100);
+    hci_send_cmd(&hci_write_class_of_device, 0x240404);
+    os_time_dly(100);
+    hci_send_cmd(&hci_write_local_name, "Joy-Con(R)"/* bt_get_local_name() */);
+    os_time_dly(100);
+    hci_send_cmd(&hci_write_extended_inquiry_response, 1, eir_data);
+    os_time_dly(100);
+    hci_send_cmd(&hci_write_scan_enable, 3);
+    os_time_dly(100);
+#endif
 //    uint8_t test[3] = {0x03,0x0c,0x00};   //测试hci_vendor_send_cmd 接口
 //    hci_vendor_send_cmd(test,3,0);
     /// GET STARTED with BTstack ///
@@ -332,9 +341,4 @@ void bt_task_handle(void *arg)
     log_info("btstack executing run loop...");
     logd("btstack %d",__LINE__);
     btstack_run_loop_execute();  //包含while（1）
-//    while (1)
-//    {
-//        os_time_dly(500);
-//        logd("btstack %d",__LINE__);
-//    }
 }

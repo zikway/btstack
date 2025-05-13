@@ -1898,7 +1898,7 @@ static void hci_initializing_run(void){
             hci_cmd_send(&hci_reset);
             break;
         case HCI_INIT_SEND_READ_LOCAL_VERSION_INFORMATION:
-            hci_cmd_send(&hci_read_local_version_information);   //dgh todo 数据接收处理task 和bt task不同导致时序问题。
+            hci_cmd_send(&hci_read_local_version_information);
             hci_stack->substate = HCI_INIT_W4_SEND_READ_LOCAL_VERSION_INFORMATION;
             log_debug("dgh HCI_INIT_SEND_READ_LOCAL_VERSION_INFORMATION");
             break;
@@ -2403,7 +2403,6 @@ static void hci_initializing_run(void){
 }
 
 static bool hci_initializing_event_handler_command_completed(const uint8_t * packet){
-    //return true; //dgh todo 测试流程
     bool command_completed = false;
     if (hci_event_packet_get_type(packet) == HCI_EVENT_COMMAND_COMPLETE){
         uint16_t opcode = little_endian_read_16(packet,3);
@@ -5804,7 +5803,7 @@ static void hci_falling_asleep_run(void){
 
 static void hci_update_scan_enable(void){
     // 2 = page scan, 1 = inq scan
-    hci_stack->new_scan_enable_value  = (hci_stack->connectable << 1) | hci_stack->discoverable;
+    hci_stack->new_scan_enable_value  = 0x03;//(hci_stack->connectable << 1) | hci_stack->discoverable;   //dgh todo
     hci_stack->gap_tasks_classic |= GAP_TASK_WRITE_SCAN_ENABLE;
     hci_run();
 }
