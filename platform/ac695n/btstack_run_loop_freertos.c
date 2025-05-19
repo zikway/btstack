@@ -166,7 +166,6 @@ static void btstack_run_loop_freertos_execute(void) {
 
         // process data sources
         btstack_run_loop_base_poll_data_sources();
-        logd("btstack %s %d ", __FILE__, __LINE__);
         // execute callbacks - protect list with mutex
         while (1){
             xSemaphoreTake(btstack_run_loop_callbacks_mutex, portMAX_DELAY);
@@ -204,12 +203,11 @@ static void btstack_run_loop_freertos_execute(void) {
         }
 
         log_debug("RL: wait with timeout %u", (int) timeout_ms);
-        logd("btstack %s %d ", __FILE__, __LINE__);
 #ifdef HAVE_FREERTOS_TASK_NOTIFICATIONS
         //xTaskNotifyWait(pdFALSE, 0xffffffff, NULL, pdMS_TO_TICKS(timeout_ms));   //
         err = os_task_pend("bt_task", msg, ARRAY_SIZE(msg));
         if (err) {
-            logd("btstack loop error");
+            logd("btstack loop error");//dgh todo
         }
 #else
         xEventGroupWaitBits(btstack_run_loop_event_group, EVENT_GROUP_FLAG_RUN_LOOP, 1, 0, pdMS_TO_TICKS(timeout_ms));

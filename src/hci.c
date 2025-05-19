@@ -4717,6 +4717,7 @@ static void event_handler(uint8_t *packet, uint16_t size){
 		// discard connection if app did not trigger a reconnect in the event handler
 		if (aConn && aConn->state == RECEIVED_DISCONNECTION_COMPLETE){
 			hci_shutdown_connection(aConn);
+            hci_stack->num_cmd_packets = 1;// dgh todo
 		}
 #ifdef ENABLE_CONTROLLER_DUMP_PACKETS
         hci_controller_dump_packets();
@@ -7723,7 +7724,6 @@ static uint8_t hci_send_prepared_cmd_packet(void) {
     uint16_t size = 3u + hci_stack->hci_packet_buffer[2u];
     // send packet
     uint8_t status = hci_send_cmd_packet(hci_stack->hci_packet_buffer, size);
-    log_error("dgh send xxxxxxxxxxxxx2222222");
     // release packet buffer on error or for synchronous transport implementations
     if ((status != ERROR_CODE_SUCCESS) || hci_transport_synchronous()){
         hci_release_packet_buffer();
@@ -8011,12 +8011,10 @@ uint8_t hci_send_cmd_va_arg(const hci_cmd_t * cmd, va_list argptr){
  * pre: num_commands >= 0 - it's allowed to send a command to the controller
  */
 uint8_t hci_cmd_send(const hci_cmd_t * cmd, ...){
-   log_error("dgh send xxxxxxxxxxxxx");
    va_list argptr;
    va_start(argptr, cmd);
    uint8_t status = hci_send_cmd_va_arg(cmd, argptr);
    va_end(argptr);
-   log_error("dgh send xxxxxxxxxxxxx1111");
    return status;
 }
 

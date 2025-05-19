@@ -57,7 +57,7 @@ int hci_packet_handler(u8 type, u8 *packet, u16 size)
     int err = 0;
     int msg[2];
 
-    logd("HCI PH : 0x%x %x %x %x %x %x %x / %d", packet,packet[0],packet[1],packet[2],packet[3],packet[4],packet[5] ,size);
+    logd("HCI rx : 0x%x %x %x %x %x %x %x / %d", type,packet[0],packet[1],packet[2],packet[3],packet[4],packet[5] ,size);
    /* log_info_hexdump(packet, size); */
     // if (transport_packet_handler != NULL) {
     //     transport_packet_handler(type, packet, size);
@@ -213,7 +213,7 @@ static int transport_can_send_packet_now(uint8_t packet_type) {
  */
 static int transport_send_packet(uint8_t packet_type, uint8_t *packet, int size){
 	// TL_CmdPacket_t *ble_cmd_buff = &BleCmdBuffer;
-
+    logd("HCI tx : 0x%x %x %x %x %x %x %x / %d", packet_type,packet[0],packet[1],packet[2],packet[3],packet[4],packet[5] ,size);
     switch (packet_type){
         case HCI_COMMAND_DATA_PACKET:
             // ble_cmd_buff->cmdserial.type = packet_type;
@@ -292,7 +292,8 @@ int btstack_demo_init()
    return 0;
 }
 
-#if 0  ////测试hci send cmd 接口 整个流程
+#define hciTest1 0 ////测试hci send cmd 接口 整个流程
+#if hciTest1  
 const static u8 eir_data[] = {
     0x05, 0x03, 0x24, 0x11, 0x00, 0x12,
     0x0d, 0x09, 'J', 'o', 'y', '-', 'C', 'o', 'n', ' ', '(', 'R', ')', 0,
@@ -305,7 +306,7 @@ void bt_task_handle(void *arg)
     u32 sys_clk =  clk_get("sys");
     bt_pll_para(24000000, sys_clk, 0, 0);
     btstack_demo_init();
-#if 0
+#if hciTest1
     hci_send_cmd(&hci_reset);   //测试hci send cmd 接口 整个流程
     os_time_dly(100);
     hci_send_cmd(&hci_read_bd_addr);
@@ -334,6 +335,18 @@ void bt_task_handle(void *arg)
     btstack_run_loop_init(btstack_run_loop_freertos_get_instance());
     // // init HCI
     hci_init(transport_get_instance(), NULL);
+//     // setup global tlv
+//     const btstack_tlv_t * btstack_tlv_impl =
+//     btstack_tlv_set_instance(btstack_tlv_impl, &btstack_tlv_flash_bank_context);
+//     // setup Link Key DB using TLV
+//     const btstack_link_key_db_t * btstack_link_key_db = btstack_link_key_db_tlv_get_instance(btstack_tlv_impl, &btstack_tlv_flash_bank_context);
+// #ifdef ENABLE_CLASSIC
+//     hci_set_link_key_db(btstack_link_key_db);
+// #endif
+//     // setup LE Device DB using TLV
+// #ifdef ENABLE_BLE
+//     le_device_db_tlv_configure(tlv_impl, &tlv_context);  //dgh todo
+// #endif
     // inform about BTstack state
     hci_event_callback_registration.callback = &packet_handler;
     hci_add_event_handler(&hci_event_callback_registration);

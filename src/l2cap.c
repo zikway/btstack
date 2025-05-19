@@ -3177,7 +3177,7 @@ static void l2cap_handle_connection_request(hci_con_handle_t handle, uint8_t sig
 
     // add to connections list
     btstack_linked_list_add_tail(&l2cap_channels, (btstack_linked_item_t *) channel);
-
+    required_level = 0;//dgh todo
     //
     if (required_level > LEVEL_0){
         // send conn resp pending if remote supported features have not been received yet
