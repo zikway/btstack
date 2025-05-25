@@ -14,7 +14,6 @@
 #include "btstack_memory.h"
 #include "btstack_run_loop.h"
 //#include "btstack_run_loop_freertos.h"
-#include "btstack_tlv_flash_bank.h"
 #include "le_device_db_tlv.h"
 #include "hci.h"
 #include "hci_dump.h"
@@ -23,6 +22,7 @@
 //ac695n
 #include "system/timer.h"
 #include "syscfg_id.h"
+#include "btstack_linkkey_ac695n.h"
 extern int btstack_main(int argc, const char * argv[]);
 
 static void (*transport_packet_handler)(uint8_t packet_type, uint8_t *packet, uint16_t size);
@@ -335,18 +335,15 @@ void bt_task_handle(void *arg)
     btstack_run_loop_init(btstack_run_loop_freertos_get_instance());
     // // init HCI
     hci_init(transport_get_instance(), NULL);
-//     // setup global tlv
-//     const btstack_tlv_t * btstack_tlv_impl =
-//     btstack_tlv_set_instance(btstack_tlv_impl, &btstack_tlv_flash_bank_context);
-//     // setup Link Key DB using TLV
-//     const btstack_link_key_db_t * btstack_link_key_db = btstack_link_key_db_tlv_get_instance(btstack_tlv_impl, &btstack_tlv_flash_bank_context);
-// #ifdef ENABLE_CLASSIC
-//     hci_set_link_key_db(btstack_link_key_db);
-// #endif
-//     // setup LE Device DB using TLV
-// #ifdef ENABLE_BLE
-//     le_device_db_tlv_configure(tlv_impl, &tlv_context);  //dgh todo
-// #endif
+    // setup Link Key DB using static
+    const btstack_link_key_db_t * btstack_link_key_db = btstack_link_key_db_ac695n_instance();
+#ifdef ENABLE_CLASSIC
+    hci_set_link_key_db(btstack_link_key_db);
+#endif
+    // setup LE Device DB using TLV
+#ifdef ENABLE_BLE
+    le_device_db_tlv_configure(tlv_impl, &tlv_context);  //dgh todo
+#endif
     // inform about BTstack state
     hci_event_callback_registration.callback = &packet_handler;
     hci_add_event_handler(&hci_event_callback_registration);

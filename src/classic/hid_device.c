@@ -447,7 +447,7 @@ static void packet_handler(uint8_t packet_type, uint16_t channel, uint8_t * pack
     bool need_report_id;
     bool need_size;
     uint16_t response_size;
-
+    log_error("dgh 0x%02x", packet_type);
     switch (packet_type){
         case L2CAP_DATA_PACKET:
             device = hid_device_get_instance_for_l2cap_cid(channel);
@@ -641,7 +641,7 @@ static void packet_handler(uint8_t packet_type, uint16_t channel, uint8_t * pack
                 case L2CAP_EVENT_INCOMING_CONNECTION:
                     switch (l2cap_event_incoming_connection_get_psm(packet)){
                         case PSM_HID_CONTROL:
-                        case PSM_HID_INTERRUPT:
+                        case PSM_HID_INTERRUPT:// dgh todo
                             l2cap_event_incoming_connection_get_address(packet, address); 
                             device = hid_device_provide_instance_for_bd_addr(address);
                             if (!device) {

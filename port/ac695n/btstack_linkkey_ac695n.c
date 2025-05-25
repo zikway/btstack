@@ -35,7 +35,7 @@
  *
  */
 
-#define BTSTACK_FILE__ "btstack_link_key_db_static.c"
+#define BTSTACK_FILE__ "btstack_linkkey_db_ac695n.c"
 
 /*
  *  btstack_link_key_db_static.c
@@ -45,7 +45,7 @@
  *  + Link keys are preserved on reflash in constrast to the program flash based link key store
  */
 
-#include "classic/btstack_link_key_db.h"
+#include "btstack_linkkey_ac695n.h"
 
 #include "btstack_debug.h"
 #include "btstack_util.h"
@@ -54,18 +54,13 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <syscfg_id.h>
 typedef struct {
-	const char * bd_addr;
-	const char * link_key;
-	int          link_key_type;
+	char   bd_addr[6];
+	char   link_key[16];
+	int    link_key_type;
+    char   reserve[2];
 } link_key_entry_t;
-
-// fixed link key db
-static const link_key_entry_t link_key_db[] = {
-		// Example enry
-		{ "11:22:33:44:55:66", "11223344556677889900112233445566", 1},
-		// Add new link keys here..
-};
 
 #ifdef ENABLE_LOG_INFO
 static char link_key_to_str_buffer[LINK_KEY_STR_LEN+1];  // 11223344556677889900112233445566\0
@@ -102,16 +97,12 @@ static void link_key_db_close(void){
 
 // returns 1 if found
 static int link_key_db_get_link_key(bd_addr_t bd_addr, link_key_t link_key, link_key_type_t * link_key_type) {
-	int i;
-	int num_entries = sizeof(link_key_db) / sizeof(link_key_entry_t);
-
-	for (i=0;i<num_entries;i++){
-		if (strcmp(bd_addr_to_str(bd_addr), link_key_db[i].bd_addr)) continue;
-		*link_key_type = (link_key_type_t) link_key_db[i].link_key_type;
-		sscanf_link_key(link_key_db[i].link_key, link_key);
-		return 1;
-	}
-	return 0;
+    link_key_entry_t temp;
+    syscfg_read(CFG_BT_LINK_KEY, &temp, sizeof(link_key_entry_t));
+	if (strcmp(bd_addr_to_str(bd_addr), bd_addr_to_str(temp.bd_addr))) return 0;
+	*link_key_type = (link_key_type_t) temp.link_key_type;
+	memcpy(link_key, temp.link_key, 16);
+	return 1;
 }
 
 static void link_key_db_delete_link_key(bd_addr_t bd_addr){
@@ -125,6 +116,11 @@ static void link_key_db_put_link_key(bd_addr_t bd_addr, link_key_t link_key, lin
     UNUSED(link_key_type);
 	log_info("Please add the following line to btstack_link_key_db.c");
 	log_info("{ \"%s\", \"%s\", %u },\n", bd_addr_to_str(bd_addr), link_key_to_str(link_key), (int) link_key_type);
+    link_key_entry_t temp;
+    memcpy(temp.bd_addr, bd_addr, 6);
+    memcpy(temp.link_key, link_key, 16);
+    temp.link_key_type = link_key_type;
+    syscfg_write(CFG_BT_LINK_KEY, &temp, sizeof(link_key_entry_t));
 }
 
 static void link_key_db_set_local_bd_addr(bd_addr_t bd_addr){
@@ -139,13 +135,14 @@ static int link_key_db_tlv_iterator_init(btstack_link_key_iterator_t * it){
 static int  link_key_db_tlv_iterator_get_next(btstack_link_key_iterator_t * it, bd_addr_t bd_addr, link_key_t link_key, link_key_type_t * link_key_type){
     uintptr_t i = (uintptr_t) it->context;
 
-    unsigned int num_entries = sizeof(link_key_db) / sizeof(link_key_entry_t);
-    if (i >= num_entries) return 0;
+    if (i >= 1) return 0;
 
     // fetch values
-    *link_key_type = (link_key_type_t) link_key_db[i].link_key_type;
-    sscanf_link_key(link_key_db[i].link_key, link_key);
-    sscanf_bd_addr(link_key_db[i].bd_addr, bd_addr);
+    link_key_entry_t temp;
+    syscfg_read(CFG_BT_LINK_KEY, &temp, sizeof(link_key_entry_t));
+	*link_key_type = (link_key_type_t) temp.link_key_type;
+	memcpy(link_key, temp.link_key, 16);
+    memcpy(bd_addr, temp.bd_addr, 6);
 
     // next
     it->context = (void*) (i+1);
@@ -156,7 +153,7 @@ static void link_key_db_tlv_iterator_done(btstack_link_key_iterator_t * it){
     UNUSED(it);
 }
 
-static const btstack_link_key_db_t btstack_link_key_db_static = {
+static const btstack_link_key_db_t btstack_link_key_db_ac695n = {
     link_key_db_init,
     link_key_db_set_local_bd_addr,
     link_key_db_close,
@@ -168,6 +165,6 @@ static const btstack_link_key_db_t btstack_link_key_db_static = {
     link_key_db_tlv_iterator_done,
 };
 
-const btstack_link_key_db_t * btstack_link_key_db_static_instance(void){
-    return &btstack_link_key_db_static;
+const btstack_link_key_db_t * btstack_link_key_db_ac695n_instance(void){
+    return &btstack_link_key_db_ac695n;
 }
