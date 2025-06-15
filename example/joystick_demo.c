@@ -1341,6 +1341,8 @@ static uint8_t device_id_sdp_service_buffer[100];
 static const char hid_device_name[] = "BTstack HID Mouse";
 static btstack_packet_callback_registration_t hci_event_callback_registration;
 static uint16_t hid_cid;
+static uint8_t app_data[10];
+static uint8_t app_length;
 // from USB HID Specification 1.1, Appendix B.2
 const uint8_t hid_descriptor_mouse_boot_mode[] = {
     0x05, 0x01,                    // USAGE_PAGE (Generic Desktop)
@@ -1374,6 +1376,18 @@ const uint8_t hid_descriptor_mouse_boot_mode[] = {
     0xc0,                          //   END_COLLECTION
     0xc0                           // END_COLLECTION
 };
+
+void app_send_repot(uint8_t *message, uint8_t message_len){
+    memcpy(app_data, message, message_len);  // 复制数据
+    app_length = message_len;
+    hid_device_request_can_send_now_event(hid_cid);
+}
+
+// HID Report sending
+static void send_report_now(void){
+    hid_device_send_interrupt_message(hid_cid, app_data, app_length);
+    //printf("Mouse: %d/%d - buttons: %02x\n", dx, dy, buttons);
+}
 
 // HID Report sending
 static void send_report(uint8_t buttons, int8_t dx, int8_t dy){
@@ -1426,7 +1440,7 @@ static void packet_handler(uint8_t packet_type, uint16_t channel, uint8_t * pack
                             hid_cid = 0;
                             break;
                         case HID_SUBEVENT_CAN_SEND_NOW:
-
+                            send_report_now();
                             break;
                         default:
                             break;

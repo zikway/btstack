@@ -207,7 +207,7 @@ static void btstack_run_loop_freertos_execute(void) {
         //xTaskNotifyWait(pdFALSE, 0xffffffff, NULL, pdMS_TO_TICKS(timeout_ms));   //
         err = os_task_pend("bt_task", msg, ARRAY_SIZE(msg));
         if (err) {
-            logd("btstack loop error");//dgh todo
+            logd("btstack loop error");//dgh todo  这里不应该报错
         }
 #else
         xEventGroupWaitBits(btstack_run_loop_event_group, EVENT_GROUP_FLAG_RUN_LOOP, 1, 0, pdMS_TO_TICKS(timeout_ms));
