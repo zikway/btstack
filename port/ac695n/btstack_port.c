@@ -31,7 +31,7 @@ static void transport_deliver_packets(void *context);
 static btstack_packet_callback_registration_t hci_event_callback_registration;
 static int hci_acl_can_send_now;
 static btstack_ring_buffer_t hci_ringbuffer;
-static SemaphoreHandle_t ring_buffer_mutex; 
+static SemaphoreHandle_t ring_buffer_mutex;
 #define MAX_NR_HOST_EVENT_PACKETS 4
 static uint8_t hci_ringbuffer_storage[HCI_HOST_ACL_PACKET_NUM   * (2 + 1 + HCI_ACL_HEADER_SIZE + HCI_HOST_ACL_PACKET_LEN) +
                                       HCI_HOST_SCO_PACKET_NUM   * (2 + 1 + HCI_SCO_HEADER_SIZE + HCI_HOST_SCO_PACKET_LEN) +
@@ -293,7 +293,7 @@ int btstack_demo_init()
 }
 
 #define hciTest1 0 ////测试hci send cmd 接口 整个流程
-#if hciTest1  
+#if hciTest1
 const static u8 eir_data[] = {
     0x05, 0x03, 0x24, 0x11, 0x00, 0x12,
     0x0d, 0x09, 'J', 'o', 'y', '-', 'C', 'o', 'n', ' ', '(', 'R', ')', 0,
@@ -342,7 +342,7 @@ void bt_task_handle(void *arg)
 #endif
     // setup LE Device DB using TLV
 #ifdef ENABLE_BLE
-    le_device_db_tlv_configure(tlv_impl, &tlv_context);  //dgh todo
+    // le_device_db_tlv_configure(tlv_impl, &tlv_context);  //dgh todo
 #endif
     // inform about BTstack state
     hci_event_callback_registration.callback = &packet_handler;

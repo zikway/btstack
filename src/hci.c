@@ -5804,7 +5804,7 @@ static void hci_falling_asleep_run(void){
 
 static void hci_update_scan_enable(void){
     // 2 = page scan, 1 = inq scan
-    hci_stack->new_scan_enable_value  = 0x03;//(hci_stack->connectable << 1) | hci_stack->discoverable;   //dgh todo
+    hci_stack->new_scan_enable_value  = (hci_stack->connectable << 1) | hci_stack->discoverable;   //dgh todo
     hci_stack->gap_tasks_classic |= GAP_TASK_WRITE_SCAN_ENABLE;
     hci_run();
 }
@@ -5818,6 +5818,7 @@ void gap_discoverable_control(uint8_t enable){
     }
 
     hci_stack->discoverable = enable;
+    hci_stack->connectable = enable;// dgh todo review
     hci_update_scan_enable();
 }
 
