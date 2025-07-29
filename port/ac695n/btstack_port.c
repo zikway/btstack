@@ -263,17 +263,24 @@ static const hci_transport_t transport = {
 static const hci_transport_t * transport_get_instance(void){
     return &transport;
 }
-
+#define add 0
+#if add
+// uint8_t dgh[6] = {0,1,2,3,4,5};
+// uint8_t dgh1[6] = {0,1,2,3,4,6};
+#endif
 int btstack_demo_init()
 {
    logd("bt_get_mac_addr : ");
    log_info_hexdump((u8 *)bt_get_mac_addr(), 6);
 
-
+#if add
+    le_controller_set_mac(dgh);
+    lmp_hci_write_local_address(dgh1);
+#else
    /* le_controller_set_mac((void *)&le_mac_addr); */
    le_controller_set_mac((void *)bt_get_mac_addr());
    lmp_hci_write_local_address((void *)bt_get_mac_addr());
-
+#endif
    /* void wdt_close(void); */
    /* wdt_close(); */
    /* btctrler_task_init((void *)hci_transport_usb_instance(), NULL); */

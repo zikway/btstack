@@ -9,6 +9,31 @@
 
 #include "api_log.h"
 
+
+typedef enum {
+	BT_EVT_UNKNOW=0,							//上电事件
+    BT_EVT_INIT, 								//init (pa)
+	BT_EVT_IDLE,								//idle (dev_id)
+	
+	BT_EVT_ADV,									//广播中(edr进入通用/限制可发现状态)
+    BT_EVT_ADV_DIR,                     		//广播(edr 处于定向回连)
+	BT_EVT_ADV_TIMOUT,							//广播超时
+	BT_EVT_SCAN = BT_EVT_ADV,					//扫描	(pa)
+	BT_EVT_SCAN_DIR = BT_EVT_ADV_DIR,			//定向扫描(dev_id)
+	BT_EVT_SCAN_TIMEOUT = BT_EVT_ADV_TIMOUT,	//扫描超时(dev_id)
+
+	BT_EVT_CONNECTED,							//连接成功	(pa)
+	BT_EVT_DISCONNECTED,						//断开连接	(pa)
+	BT_EVT_CONNECT_FAIL,						//(回连)连接失败	(pa)
+	BT_EVT_READY,								//蓝牙notyif打开,可以接收数据(must pa!)
+
+	BT_EVT_REMOTE_TYPE,							//蓝牙识别 remote type event
+	BT_EVT_RX,									//rx消息 (pa)
+	BT_EVT_TX,									//READ 事件 (dev_id)
+} bt_evt_t;
+
+#define	BT_BLE 0
+#define	BT_EDR 1
 //System properties
 #define MAX_ATT_DB_SIZE 1
 #define NVM_NUM_DEVICE_DB_ENTRIES 3

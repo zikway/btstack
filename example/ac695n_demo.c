@@ -1405,7 +1405,7 @@ const uint8_t hid_descriptor_mouse_boot_mode[] = {
     0xc0                           // END_COLLECTION
 };
 
-void app_send_repot(uint8_t *message, uint8_t message_len){
+void classic_send_repot(uint8_t *message, uint8_t message_len){
     memcpy(app_data, message, message_len);  // 复制数据
     app_length = message_len;
     hid_device_request_can_send_now_event(hid_cid);
@@ -1570,7 +1570,7 @@ static void packet_handler(uint8_t packet_type, uint16_t channel, uint8_t * pack
                         case HID_SUBEVENT_CONNECTION_OPENED:
                             if (hid_subevent_connection_opened_get_status(packet) != ERROR_CODE_SUCCESS) return;
                             hid_cid = hid_subevent_connection_opened_get_hid_cid(packet);
-
+                            api_bt_event(0, BT_EDR, BT_EVT_READY, NULL);// 适配ble cccd事件上报
                             printf("HID Connected, simulating mouse movements...\n");
                             break;
                         case HID_SUBEVENT_CONNECTION_CLOSED:
@@ -1664,7 +1664,7 @@ static void packet_handler(uint8_t packet_type, uint16_t channel, uint8_t * pack
                     printf("Protocol Mode: %s mode\n", hids_subevent_protocol_mode_get_protocol_mode(packet) ? "Report" : "Boot");
                     break;
                 case HIDS_SUBEVENT_CAN_SEND_NOW:
-                    mousing_can_send_now();
+                    //mousing_can_send_now();
                     break;
 
                 default:
@@ -1763,7 +1763,7 @@ static void hog_mouse_setup(void){
     memset(null_addr, 0, 6);
     gap_advertisements_set_params(adv_int_min, adv_int_max, adv_type, 0, null_addr, 0x07, 0x00);
     gap_advertisements_set_data(adv_data_len, (uint8_t*) adv_data);
-    gap_advertisements_enable(1);
+    // gap_advertisements_enable(1); //让应用处理
 
     // register for events
     hci_event_callback_registration.callback = &packet_handler;
@@ -1779,6 +1779,20 @@ static void hog_mouse_setup(void){
     hids_device_register_packet_handler(packet_handler);
 }
 
+
+void ble_send_report(uint8_t *message, uint8_t message_len){
+    switch (protocol_mode){
+        case 0:
+            hids_device_send_boot_mouse_input_report(con_handle, message, sizeof(message_len));
+            break;
+        case 1:
+            hids_device_send_input_report(con_handle, message, sizeof(message_len));
+            break;
+        default:
+            break;
+    }
+    hids_device_request_can_send_now_event(con_handle);
+}
 // HID Report sending
 // static void send_report(uint8_t buttons, int8_t dx, int8_t dy){     //暂时屏蔽，重复定义 dgh todo
 //     uint8_t report[] = { buttons, (uint8_t) dx, (uint8_t) dy };
@@ -1919,7 +1933,7 @@ int btstack_main(int argc, const char * argv[]){
     (void)argv;
 
     // allow to get found by inquiry
-    gap_discoverable_control(1);
+    // gap_discoverable_control(1);   //让应用处理
     // use Limited Discoverable Mode; Peripheral; Pointing Device as CoD
     gap_set_class_of_device(0x2580);
     // set local name to be identified - zeroes will be replaced by actual BD ADDR
@@ -1987,6 +2001,8 @@ int btstack_main(int argc, const char * argv[]){
 #endif
     // turn on!
     hci_power_control(HCI_POWER_ON);
+
+    api_bt_event(0, BT_BLE, BT_EVT_INIT, NULL);// 适配ble初始化完成
     return 0;
 }
 /* LISTING_END */

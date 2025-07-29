@@ -48,7 +48,7 @@
 #include <string.h>
 #include <inttypes.h>
 
-#include "hog_keyboard_demo.h"
+// #include "hog_keyboard_demo.h"   //dgh todo
 
 #include "btstack.h"
 
@@ -442,7 +442,7 @@ static void packet_handler (uint8_t packet_type, uint16_t channel, uint8_t *pack
                     break;
             }
             break;
-            
+
         default:
             break;
     }

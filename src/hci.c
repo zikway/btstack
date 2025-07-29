@@ -74,6 +74,9 @@
 #include "hci_dump.h"
 #include "ad_parser.h"
 
+//#include "api_bt.h"    //适配增加头文件
+
+
 #ifdef ENABLE_CONTROLLER_DUMP_PACKETS
 #include <stdio.h>  // sprintf
 #endif
@@ -281,6 +284,8 @@ static const char * default_classic_name = "BTstack 00:00:00:00:00:00";
 static uint8_t disable_l2cap_timeouts = 0;
 #endif
 
+static uint16_t ble_handle = 0xffff;   //invalid value
+static uint16_t br_handle = 0xffff;    //invalid value
 // reset connection state on create and on reconnect
 // don't overwrite addr, con handle, role
 static void hci_connection_init(hci_connection_t * conn){
@@ -3479,7 +3484,9 @@ static void hci_handle_le_connection_complete_event(const uint8_t * hci_event){
         }
 #endif
 	}
-
+    if (status) {
+       api_bt_event(0, BT_BLE, BT_EVT_CONNECT_FAIL, NULL);// 适配ble连接失败上报
+    }
 	// LE connections are auto-accepted, so just create a connection if there isn't one already
 	if (!conn){
 		conn = create_connection_for_bd_addr_and_type(addr, addr_type, role);
@@ -3516,7 +3523,8 @@ static void hci_handle_le_connection_complete_event(const uint8_t * hci_event){
 	// restart timer
 	// btstack_run_loop_set_timer(&conn->timeout, HCI_CONNECTION_TIMEOUT_MS);
 	// btstack_run_loop_add_timer(&conn->timeout);
-
+    api_bt_event(0, BT_BLE, BT_EVT_CONNECTED, NULL);// 适配连接成功事件上报
+    ble_handle = conn->con_handle;
 	log_info("New connection: handle %u, %s", conn->con_handle, bd_addr_to_str(conn->address));
 
     // emit GAP_SUBEVENT_LE_CONNECTION_COMPLETE
@@ -3876,13 +3884,15 @@ static void event_handler(uint8_t *packet, uint16_t size){
                     if ((conn->bonding_flags & BONDING_DEDICATED) != 0){
                         hci_trigger_remote_features_for_connection(conn);
                     }
-
+                    br_handle = conn->con_handle;
+                    api_bt_event(0, BT_EDR, BT_EVT_CONNECTED, NULL);// 适配连接成功事件上报
                     log_info("New connection: handle %u, %s", conn->con_handle, bd_addr_to_str(conn->address));
 
                     hci_emit_nr_connections_changed();
                 } else {
                     // connection failed
                     hci_handle_connection_failed(conn, packet[2]);
+                    api_bt_event(0, BT_EDR, BT_EVT_CONNECT_FAIL, NULL);// 适配连接成功事件上报
                 }
             }
             break;
@@ -4269,6 +4279,13 @@ static void event_handler(uint8_t *packet, uint16_t size){
         case HCI_EVENT_DISCONNECTION_COMPLETE:
             if (packet[2]) break;   // status != 0
             handle = little_endian_read_16(packet, 3);
+            if (handle == ble_handle) {
+                api_bt_event(0, BT_BLE, BT_EVT_DISCONNECTED, NULL);// 适配连接成功事件上报
+            } else if (handle == br_handle) {
+                api_bt_event(0, BT_EDR, BT_EVT_DISCONNECTED, NULL);// 适配连接成功事件上报
+            } else {
+                log_info("unknown handle %d", handle);
+            }
             // drop outgoing ACL fragments if it is for closed connection and release buffer if tx not active
             if (hci_stack->acl_fragmentation_total_size > 0u) {
                 if (handle == READ_ACL_CONNECTION_HANDLE(hci_stack->hci_packet_buffer)){
@@ -5820,6 +5837,12 @@ void gap_discoverable_control(uint8_t enable){
     hci_stack->discoverable = enable;
     hci_stack->connectable = enable;// dgh todo review
     hci_update_scan_enable();
+    if (enable) {
+        api_bt_event(0, BT_EDR, BT_EVT_ADV, NULL);// 适配br可发现开启事件上报
+    } else {
+        api_bt_event(0, BT_EDR, BT_EVT_IDLE, NULL);// 适配br可发现停止事件上报
+    }
+
 }
 
 void gap_connectable_control(uint8_t enable){
@@ -8831,8 +8854,14 @@ void gap_scan_response_set_data(uint8_t scan_response_data_length, uint8_t * sca
 void gap_advertisements_enable(int enabled){
     if (enabled == 0){
         hci_stack->le_advertisements_state &= ~LE_ADVERTISEMENT_STATE_ENABLED;
+        api_bt_event(0, BT_EDR, BT_EVT_IDLE, NULL);   //适配ble 广播关闭
     } else {
         hci_stack->le_advertisements_state |= LE_ADVERTISEMENT_STATE_ENABLED;
+        if ((hci_stack->le_advertisements_type == 1) || (hci_stack->le_advertisements_type == 4)) {
+            api_bt_event(0, BT_EDR, BT_EVT_ADV_DIR, NULL);   //适配ble 定向广播打开
+        } else {
+            api_bt_event(0, BT_EDR, BT_EVT_ADV, NULL);   //适配ble 非定向广播打开
+        }
     }
     hci_update_advertisements_enabled_for_current_roles();
     hci_run();
@@ -10960,3 +10989,8 @@ hci_stack_t * hci_get_stack() {
 }
 
 #endif
+
+// 用于断开acl 连接
+void acl_disconnect(uint8_t is_br) {
+    gap_disconnect(is_br?br_handle:ble_handle);
+}

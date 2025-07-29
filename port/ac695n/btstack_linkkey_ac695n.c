@@ -107,6 +107,9 @@ static int link_key_db_get_link_key(bd_addr_t bd_addr, link_key_t link_key, link
 
 static void link_key_db_delete_link_key(bd_addr_t bd_addr){
     (void) bd_addr;
+    link_key_entry_t temp;
+    memset(&temp, 0xff, sizeof(link_key_entry_t));
+    syscfg_write(CFG_BT_LINK_KEY, &temp, sizeof(link_key_entry_t));
 }
 
 

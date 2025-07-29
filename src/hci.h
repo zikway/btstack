@@ -316,52 +316,52 @@ typedef enum {
     SM_GENERAL_REENCRYPTION_FAILED,
 
     // Phase 1: Pairing Feature Exchange
-    SM_PH1_W4_USER_RESPONSE,
+    SM_PH1_W4_USER_RESPONSE,  //4
 
     // Phase 2: Authenticating and Encrypting
 
     // get random number for use as TK Passkey if we show it 
-    SM_PH2_GET_RANDOM_TK,
+    SM_PH2_GET_RANDOM_TK,  //5
     SM_PH2_W4_RANDOM_TK,
 
     // get local random number for confirm c1
-    SM_PH2_C1_GET_RANDOM_A,
+    SM_PH2_C1_GET_RANDOM_A,  //7
     SM_PH2_C1_W4_RANDOM_A,
     SM_PH2_C1_GET_RANDOM_B,
     SM_PH2_C1_W4_RANDOM_B,
 
     // calculate confirm value for local side
-    SM_PH2_C1_GET_ENC_A,
+    SM_PH2_C1_GET_ENC_A,   //11
     SM_PH2_C1_W4_ENC_A,
 
     // calculate confirm value for remote side
-    SM_PH2_C1_GET_ENC_C,
+    SM_PH2_C1_GET_ENC_C,  //13
     SM_PH2_C1_W4_ENC_C,
 
-    SM_PH2_C1_SEND_PAIRING_CONFIRM,
+    SM_PH2_C1_SEND_PAIRING_CONFIRM,  //15
     SM_PH2_SEND_PAIRING_RANDOM,
 
     // calc STK
-    SM_PH2_CALC_STK,
+    SM_PH2_CALC_STK,   //17
     SM_PH2_W4_STK,
 
-    SM_PH2_W4_CONNECTION_ENCRYPTED,
+    SM_PH2_W4_CONNECTION_ENCRYPTED,  //19
 
     // Phase 3: Transport Specific Key Distribution
     // calculate DHK, Y, EDIV, and LTK
-    SM_PH3_Y_GET_ENC,
+    SM_PH3_Y_GET_ENC,   //20
     SM_PH3_Y_W4_ENC,
     SM_PH3_LTK_GET_ENC,
 
     // exchange keys
-    SM_PH3_DISTRIBUTE_KEYS,
+    SM_PH3_DISTRIBUTE_KEYS,   //23
     SM_PH3_RECEIVE_KEYS,
 
     // Phase 4: re-establish previously distributed LTK
-    SM_PH4_W4_CONNECTION_ENCRYPTED,
+    SM_PH4_W4_CONNECTION_ENCRYPTED,   //25
 
     // RESPONDER ROLE
-    SM_RESPONDER_IDLE,
+    SM_RESPONDER_IDLE,   //26
     SM_RESPONDER_SEND_SECURITY_REQUEST,
     SM_RESPONDER_PH0_RECEIVED_LTK_REQUEST,
     SM_RESPONDER_PH0_RECEIVED_LTK_W4_IRK,

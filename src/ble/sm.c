@@ -265,7 +265,7 @@ static btstack_linked_list_t sm_address_resolution_general_queue;
 // aes128 crypto engine.
 static sm_aes128_state_t  sm_aes128_state;
 
-// crypto 
+// crypto
 static btstack_crypto_random_t   sm_crypto_random_request;
 static btstack_crypto_aes128_t   sm_crypto_aes128_request;
 #ifdef ENABLE_LE_SECURE_CONNECTIONS
@@ -509,10 +509,12 @@ static void sm_run_timer_handler(btstack_timer_source_t * ts){
 	sm_run();
 }
 static void sm_trigger_run(void){
+    log_info("sm_run: aaa  %d",__LINE__);
     if (!sm_initialized) return;
 	(void)btstack_run_loop_remove_timer(&sm_run_timer);
-	btstack_run_loop_set_timer(&sm_run_timer, 0);
+	btstack_run_loop_set_timer(&sm_run_timer, 20);   //dgh todo
 	btstack_run_loop_add_timer(&sm_run_timer);
+    log_info("sm_run: aaa  %d",__LINE__);
 }
 
 // Key utils
@@ -868,7 +870,7 @@ static void sm_setup_tk(void){
         use_oob = (sm_pairing_packet_get_oob_data_flag(setup->sm_m_preq) | sm_pairing_packet_get_oob_data_flag(setup->sm_s_pres)) != 0;
     } else {
         // In LE legacy pairing, the out of band method is used if both the devices have
-        // the other device's out of band authentication data available. 
+        // the other device's out of band authentication data available.
         use_oob = (sm_pairing_packet_get_oob_data_flag(setup->sm_m_preq) & sm_pairing_packet_get_oob_data_flag(setup->sm_s_pres)) != 0;
     }
     if (use_oob){
@@ -1061,6 +1063,7 @@ static void sm_trigger_user_response(sm_connection_t * sm_conn){
     // notify client for: JUST WORKS confirm, Numeric comparison confirm, PASSKEY display or input
     setup->sm_user_response = SM_USER_RESPONSE_IDLE;
     sm_conn->sm_pairing_active = true;
+    log_info("dgh: aaa  %d,%d",__LINE__, setup->sm_stk_generation_method);
     switch (setup->sm_stk_generation_method){
         case PK_RESP_INPUT:
             if (IS_RESPONDER(sm_conn->sm_role)){
@@ -2820,10 +2823,11 @@ static bool sm_run_ready(void) {
 }
 
 static void sm_run(void){
+    log_info("sm_run: aaa  %d",__LINE__);
 
     // ready
     if (sm_run_ready() == false) return;
-    
+
     // non-connection related behaviour
     bool done = sm_run_non_connection_logic();
     if (done) return;
@@ -3072,7 +3076,7 @@ static void sm_run(void){
                     key_distribution_flags &= ~SM_KEYDIST_ENC_KEY;
                 }
 #endif
-                // setup in response 
+                // setup in response
                 sm_pairing_packet_set_initiator_key_distribution(setup->sm_s_pres, sm_pairing_packet_get_initiator_key_distribution(setup->sm_m_preq) & key_distribution_flags);
                 sm_pairing_packet_set_responder_key_distribution(setup->sm_s_pres, sm_pairing_packet_get_responder_key_distribution(setup->sm_m_preq) & key_distribution_flags);
 
@@ -3703,8 +3707,8 @@ static void sm_handle_random_result_ph2_tk(void * arg){
                 btstack_crypto_random_generate(&sm_crypto_random_request, setup->sm_local_random, 16, &sm_handle_random_result_ph2_random, (void *)(uintptr_t) connection->sm_handle);
             }
         }
-    }   
-    sm_trigger_run(); 
+    }
+    sm_trigger_run();
 }
 
 static void sm_handle_random_result_ph3_div(void * arg){
@@ -3852,7 +3856,7 @@ static void sm_event_packet_handler (uint8_t packet_type, uint16_t channel, uint
     uint8_t           status;
     bd_addr_t         addr;
     bd_addr_type_t    addr_type;
-
+    printf("aaa 3855 %d\n", packet_type);
     switch (packet_type) {
 
 		case HCI_EVENT_PACKET:
@@ -3913,7 +3917,7 @@ static void sm_event_packet_handler (uint8_t packet_type, uint16_t channel, uint
                             break;
                     }
 					break;
-					
+
 #ifdef ENABLE_CLASSIC
 			    case HCI_EVENT_CONNECTION_COMPLETE:
 			        // ignore if connection failed
@@ -4798,17 +4802,20 @@ static void sm_pdu_handler(sm_connection_t *sm_conn, uint8_t sm_pdu_code, const 
             // notify client to hide shown passkey
             if (setup->sm_stk_generation_method == PK_INIT_INPUT){
                 sm_notify_client_base(SM_EVENT_PASSKEY_DISPLAY_CANCEL, sm_conn->sm_handle, sm_conn->sm_peer_addr_type, sm_conn->sm_peer_address);
+                log_info("sm_run: aaa  %d",__LINE__);
             }
 
             // handle user cancel pairing?
             if (setup->sm_user_response == SM_USER_RESPONSE_DECLINE){
                 sm_pairing_error(sm_conn, SM_REASON_PASSKEY_ENTRY_FAILED);
+                log_info("sm_run: aaa  %d",__LINE__);
                 break;
             }
 
             // wait for user action?
             if (setup->sm_user_response == SM_USER_RESPONSE_PENDING){
                 sm_conn->sm_engine_state = SM_PH1_W4_USER_RESPONSE;
+                log_info("sm_run: aaa  %d",__LINE__);
                 break;
             }
 
