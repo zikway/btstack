@@ -5917,7 +5917,7 @@ static bool hci_run_acl_fragments(void){
         hci_connection_t *connection = hci_connection_for_handle(con_handle);
         if (connection) {
             if (hci_can_send_prepared_acl_packet_now(con_handle)){
-                hci_send_acl_packet_fragments(connection);
+                // hci_send_acl_packet_fragments(connection); //dgh to review
                 return true;
             }
         } else {

@@ -1280,9 +1280,9 @@ static void handle_write_command(att_connection_t * att_connection, uint8_t * re
     if ((it.flags & (uint16_t)ATT_PROPERTY_DYNAMIC) == 0u){
         return;
     }
-    if ((it.flags & required_flags) == 0u){
-        return;
-    }
+    // if ((it.flags & required_flags) == 0u){   /// dgh to review
+    //     return;
+    // }
     if (att_validate_security(att_connection, ATT_WRITE, &it) != ATT_ERROR_SUCCESS){
         return;
     }
