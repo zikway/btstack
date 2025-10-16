@@ -206,6 +206,12 @@ static enum {
     APP_CONNECTED
 } app_state = APP_BOOTING;
 
+
+//dgh add
+bd_addr_t recon_addr;
+static uint8_t dis_con;
+static hci_con_handle_t con_handle = HCI_CON_HANDLE_INVALID;
+
 // HID Keyboard lookup
 static bool lookup_keycode(uint8_t character, const uint8_t * table, int size, uint8_t * keycode){
     int i;
@@ -326,6 +332,17 @@ static void demo_text_timer_handler(btstack_timer_source_t * ts){
 
 #endif
 
+void dgh_reconnect () {
+    if (dis_con == 0) {
+        return;
+    }
+    log_info("dgh aaa reconnect\n");
+    dis_con = 0;
+    int status = hid_device_connect(recon_addr, &hid_cid);//hid_host_connect(recon_addr, hid_host_report_mode, &hid_cid);
+    if (status != ERROR_CODE_SUCCESS){
+        printf("HID host connect failed, status 0x%02x.\n", status);
+    }
+}
 static void packet_handler(uint8_t packet_type, uint16_t channel, uint8_t * packet, uint16_t packet_size){
     UNUSED(channel);
     UNUSED(packet_size);
@@ -365,29 +382,26 @@ static void packet_handler(uint8_t packet_type, uint16_t channel, uint8_t * pack
                             printf("HID Connected, please start typing...\n");
 #else                        
                             printf("HID Connected, sending demo text...\n");
-                            demo_text_timer_handler(NULL);
+                            //demo_text_timer_handler(NULL); //dgh done 不需要的逻辑
 #endif
                             break;
                         case HID_SUBEVENT_CONNECTION_CLOSED:
-                            btstack_run_loop_remove_timer(&send_timer);
+                            //btstack_run_loop_remove_timer(&send_timer); //dgh done 不需要的逻辑
                             printf("HID Disconnected\n");
                             app_state = APP_NOT_CONNECTED;
                             hid_cid = 0;
-                            break;
-                        case HID_SUBEVENT_CAN_SEND_NOW:
-                            if (send_keycode){
-                                send_report(send_modifier, send_keycode);
-                                // schedule key up
-                                send_keycode = 0;
-                                send_modifier = 0;
-                                btstack_run_loop_set_timer_handler(&send_timer, trigger_key_up);
-                                btstack_run_loop_set_timer(&send_timer, TYPING_KEYDOWN_MS);
-                            } else {
-                                send_report(0, 0);
-                                // schedule next key down
-                                btstack_run_loop_set_timer_handler(&send_timer, send_next);
-                                btstack_run_loop_set_timer(&send_timer, TYPING_DELAY_MS);
-                            }
+                            con_handle = HCI_CON_HANDLE_INVALID;
+                            printf("Disconnected\n");
+                            dis_con = 1;
+                            //if ((btstack_event_state_get_state(packet) == HCI_STATE_WORKING) && dis_con){
+                                // dis_con = 0;
+                                // status = hid_device_connect(recon_addr, &hid_cid);//hid_host_connect(recon_addr, hid_host_report_mode, &hid_cid);
+                                // if (status != ERROR_CODE_SUCCESS){
+                                //     printf("HID host connect failed, status 0x%02x.\n", status);
+                                // }
+                            //}
+                            btstack_run_loop_set_timer_handler(&send_timer, dgh_reconnect);
+                            btstack_run_loop_set_timer(&send_timer, 2000);
                             btstack_run_loop_add_timer(&send_timer);
                             break;
                         default:

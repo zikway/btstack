@@ -447,7 +447,7 @@ static void packet_handler(uint8_t packet_type, uint16_t channel, uint8_t * pack
     bool need_report_id;
     bool need_size;
     uint16_t response_size;
-    log_error("dgh 0x%02x", packet_type);
+    log_error("dgh hid packet_handler 0x%02x", packet_type);
     switch (packet_type){
         case L2CAP_DATA_PACKET:
             device = hid_device_get_instance_for_l2cap_cid(channel);

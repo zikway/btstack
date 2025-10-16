@@ -202,13 +202,13 @@ static void btstack_run_loop_freertos_execute(void) {
             timeout_ms = (uint32_t) timeout_next_timer_ms;
         }
 
-        log_debug("RL: wait with timeout %u", (int) timeout_ms);
+        //log_debug("RL: wait with timeout %u", (int) timeout_ms);
 #ifdef HAVE_FREERTOS_TASK_NOTIFICATIONS
         //xTaskNotifyWait(pdFALSE, 0xffffffff, NULL, pdMS_TO_TICKS(timeout_ms));   //
         //err = os_task_pend("bt_task", msg, ARRAY_SIZE(msg));
         err = __os_taskq_pend(msg, ARRAY_SIZE(msg), pdMS_TO_TICKS(timeout_ms));
         if (err) {
-            logd("btstack loop error");//dgh todo  这里不应该报错
+            //logd("btstack loop error");//dgh todo  这里不应该报错
         }
 #else
         xEventGroupWaitBits(btstack_run_loop_event_group, EVENT_GROUP_FLAG_RUN_LOOP, 1, 0, pdMS_TO_TICKS(timeout_ms));

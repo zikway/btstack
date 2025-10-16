@@ -75,7 +75,7 @@
 #include "ad_parser.h"
 
 //#include "api_bt.h"    //适配增加头文件
-
+extern bd_addr_t recon_addr;   //dgh 添加测试
 
 #ifdef ENABLE_CONTROLLER_DUMP_PACKETS
 #include <stdio.h>  // sprintf
@@ -3848,6 +3848,7 @@ static void event_handler(uint8_t *packet, uint16_t size){
         case HCI_EVENT_CONNECTION_COMPLETE:
             // Connection management
             reverse_bd_addr(&packet[5], addr);
+            reverse_bd_addr(&packet[5], recon_addr);
             log_info("Connection_complete (status=%u) %s", packet[2], bd_addr_to_str(addr));
             addr_type = BD_ADDR_TYPE_ACL;
             conn = hci_connection_for_bd_addr_and_type(addr, addr_type);
@@ -4203,13 +4204,14 @@ static void event_handler(uint8_t *packet, uint16_t size){
                             // already got encryption key size
                             hci_handle_read_encryption_key_size_complete(conn, encryption_key_size);
                         } else {
-                            if (hci_command_supported(SUPPORTED_HCI_COMMAND_READ_ENCRYPTION_KEY_SIZE)) {
-                                // For Classic, we need to validate encryption key size first, if possible (== supported by Controller)
-                                conn->bonding_flags |= BONDING_SEND_READ_ENCRYPTION_KEY_SIZE;
-                            } else {
-                                // if not, pretend everything is perfect
-                                hci_handle_read_encryption_key_size_complete(conn, 16);
-                            }
+                            // if (hci_command_supported(SUPPORTED_HCI_COMMAND_READ_ENCRYPTION_KEY_SIZE)) {
+                            //     // For Classic, we need to validate encryption key size first, if possible (== supported by Controller)
+                            //     conn->bonding_flags |= BONDING_SEND_READ_ENCRYPTION_KEY_SIZE;
+                            // } else {
+                            //     // if not, pretend everything is perfect
+                            //     hci_handle_read_encryption_key_size_complete(conn, 16);
+                            // }
+                            hci_handle_read_encryption_key_size_complete(conn, 16);  //dgh done 杰里回复该读取key size 的cmd，这里直接认为不支持。
                         }
                     }
 #endif
@@ -4237,6 +4239,7 @@ static void event_handler(uint8_t *packet, uint16_t size){
         case HCI_EVENT_AUTHENTICATION_COMPLETE_EVENT:
             handle = hci_event_authentication_complete_get_connection_handle(packet);
             conn = hci_connection_for_handle(handle);
+            log_info("dgh HCI_EVENT_AUTHENTICATION_COMPLETE_EVENT %d,%02x", handle,conn);
             if (!conn) break;
 
             // clear authentication active flag
