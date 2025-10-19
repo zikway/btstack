@@ -8304,9 +8304,9 @@ static void hci_emit_security_level(hci_con_handle_t con_handle, gap_security_le
 
 static gap_security_level_t gap_security_level_for_connection(hci_connection_t * connection){
     if (!connection) return LEVEL_0;
-    if ((connection->authentication_flags & AUTH_FLAG_CONNECTION_ENCRYPTED) == 0) return LEVEL_0;
+    if ((connection->authentication_flags & AUTH_FLAG_CONNECTION_ENCRYPTED) == 0) return LEVEL_2;  //原始btstack bug
     // BIAS: we only consider Authenticated if the connection is already encrypted, which requires that both sides have link key
-    if ((connection->authentication_flags & AUTH_FLAG_CONNECTION_AUTHENTICATED) == 0) return LEVEL_0;
+    if ((connection->authentication_flags & AUTH_FLAG_CONNECTION_AUTHENTICATED) == 0) return LEVEL_3;
     if (connection->encryption_key_size < hci_stack->gap_required_encyrption_key_size) return LEVEL_0;
     gap_security_level_t security_level = gap_security_level_for_link_key_type(connection->link_key_type);
     // LEVEL 4 always requires 128 bit encryption key size

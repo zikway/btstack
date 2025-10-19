@@ -107,6 +107,11 @@
 #define BYTES_PER_FRAME     (2*NUM_CHANNELS)
 #define MAX_SBC_FRAME_SIZE 120
 
+//dgh add
+bd_addr_t recon_addr;
+static uint8_t dis_con;
+static btstack_timer_source_t send_timer;
+
 #ifdef HAVE_BTSTACK_STDIN
 static const char * device_addr_string = "00:1B:DC:08:E2:72"; // pts v5.0
 static bd_addr_t device_addr;
@@ -1371,7 +1376,7 @@ static btstack_packet_callback_registration_t sm_event_callback_registration;
 static uint8_t battery = 100;
 static hci_con_handle_t con_handle = HCI_CON_HANDLE_INVALID;
 static uint8_t protocol_mode = 1;
-#if 0
+#if 1   //1 表示原始hid report map，0表示 修改的hid report map，用于测试大包。
 // from USB HID Specification 1.1, Appendix B.2
 const uint8_t hid_descriptor_mouse_boot_mode[] = {
     0x05, 0x01,                    // USAGE_PAGE (Generic Desktop)
@@ -1771,6 +1776,18 @@ static void hid_embedded_start_mousing(void){
 #endif
 // On embedded systems, simulate clicking on 4 corners of a square
 
+void dgh_reconnect () {    //用于重连测试
+    if (dis_con == 0) {
+        return;
+    }
+    log_info("dgh aaa reconnect\n");
+    dis_con = 0;
+    int status = hid_device_connect(recon_addr, &hid_cid);//hid_host_connect(recon_addr, hid_host_report_mode, &hid_cid);
+    if (status != ERROR_CODE_SUCCESS){
+        printf("HID host connect failed, status 0x%02x.\n", status);
+    }
+}
+
 static void packet_handler(uint8_t packet_type, uint16_t channel, uint8_t * packet, uint16_t packet_size){
     UNUSED(channel);
     UNUSED(packet_size);
@@ -1797,6 +1814,19 @@ static void packet_handler(uint8_t packet_type, uint16_t channel, uint8_t * pack
                         case HID_SUBEVENT_CONNECTION_CLOSED:
                             printf("HID Disconnected\n");
                             hid_cid = 0;
+                            con_handle = HCI_CON_HANDLE_INVALID;
+                            printf("Disconnected\n");
+                            dis_con = 1;
+                            //if ((btstack_event_state_get_state(packet) == HCI_STATE_WORKING) && dis_con){
+                                // dis_con = 0;
+                                // status = hid_device_connect(recon_addr, &hid_cid);//hid_host_connect(recon_addr, hid_host_report_mode, &hid_cid);
+                                // if (status != ERROR_CODE_SUCCESS){
+                                //     printf("HID host connect failed, status 0x%02x.\n", status);
+                                // }
+                            //}
+                            btstack_run_loop_set_timer_handler(&send_timer, dgh_reconnect);
+                            btstack_run_loop_set_timer(&send_timer, 2000);
+                            btstack_run_loop_add_timer(&send_timer);
                             break;
                         case HID_SUBEVENT_CAN_SEND_NOW:
                             send_report_now();
